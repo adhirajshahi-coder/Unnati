@@ -57,3 +57,34 @@ services:
 
       - key: NODE_VERSION
         value: "22"
+
+      # Live mandi prices from the Government of India Agmarknet feed. Register a
+      # free key at https://data.gov.in and set it in the Render dashboard. Without
+      # it the app serves its shipped baseline prices and labels them as such — it
+      # does not break, it just stops being live.
+      - key: DATA_GOV_API_KEY
+        sync: false
+
+  # Pulls current mandi prices four times a day. Agmarknet markets report through the
+  # morning and into the afternoon, so a single overnight run would miss most of them.
+  # Times are UTC; 02:30 UTC is 08:00 IST.
+  - type: cron
+    name: unnati-price-ingest
+    runtime: node
+    plan: free
+    region: singapore
+    branch: main
+    schedule: "30 2,6,10,14 * * *"
+    buildCommand: npm ci
+    startCommand: npm run db:ingest
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: unnati-db
+          property: connectionString
+      - key: DATABASE_SSL
+        value: require
+      - key: DATA_GOV_API_KEY
+        sync: false
+      - key: NODE_VERSION
+        value: "22"

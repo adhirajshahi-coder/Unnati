@@ -8,6 +8,20 @@
       "when": 1789360610707,
       "tag": "0000_melted_vector",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789370796259,
+      "tag": "0001_cool_eternals",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789372078186,
+      "tag": "0002_shiny_iron_lad",
+      "breakpoints": true
     }
   ]
 }

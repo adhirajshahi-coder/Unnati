@@ -21,6 +21,7 @@ import { roadDistanceKm, detourKm } from "@/lib/engine/geo";
 import { tripCost, splitCost, soloCost, savings } from "@/lib/engine/costs";
 import { rankMandis, type MandiCandidate } from "@/lib/engine/netPrice";
 import { pooledQuote, scoreLoads, bestFill } from "@/lib/engine/pooling";
+import { preferPrice } from "@/lib/engine/sources";
 import { chargeWithReminder, notify, notifyTripWatchers } from "@/lib/notifications";
 
 /** Default whole-vehicle rate when no specific truck has been chosen yet. */
@@ -34,8 +35,9 @@ export const PAYMENT_TERM_DAYS = 14;
 export async function latestPrices(cropId: string): Promise<MandiCandidate[]> {
   const db = await getDb();
 
-  // DISTINCT ON is the idiomatic Postgres way to take the newest row per group, and
-  // it is far cheaper than a correlated subquery per mandi.
+  // Ordered newest-first, then reduced per mandi by preferPrice — which weighs the
+  // source as well as the timestamp, so a real government price is never shadowed by
+  // the shipped baseline written minutes later.
   const rows = await db
     .select({
       id: mandis.id,
@@ -58,11 +60,13 @@ export async function latestPrices(cropId: string): Promise<MandiCandidate[]> {
     .where(eq(priceRecords.cropId, cropId))
     .orderBy(priceRecords.mandiId, desc(priceRecords.recordedAt));
 
-  const newestPerMandi = new Map<string, MandiCandidate>();
+  const bestPerMandi = new Map<string, MandiCandidate>();
   for (const r of rows) {
-    if (!newestPerMandi.has(r.id)) newestPerMandi.set(r.id, r as MandiCandidate);
+    const candidate = r as MandiCandidate;
+    const held = bestPerMandi.get(r.id);
+    if (!held || preferPrice(candidate, held)) bestPerMandi.set(r.id, candidate);
   }
-  return [...newestPerMandi.values()];
+  return [...bestPerMandi.values()];
 }
 
 export interface RecommendationRequest {

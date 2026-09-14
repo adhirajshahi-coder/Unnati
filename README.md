@@ -58,8 +58,18 @@ PIN is `1234` for all of them.
 |---|---|---|
 | `9000000001` | Ramesh Pawar, Vinchur | Farmer |
 | `9000000002` | Sunita Jadhav, Niphad | Farmer |
+| `9000000011` | Rajbir Singh, Kharkhoda (Sonipat) | Farmer, NCR |
+| `9000000012` | Anita Yadav, Najafgarh (Delhi) | Farmer, NCR |
 | `9111111111` | Santosh Transport | Truck operator |
 | `9999999999` | UNNATI Ops | Admin |
+
+### Where it covers
+
+**Delhi NCR** — Azadpur, Ghazipur, Okhla, Narela, Keshopur, Noida, Ghaziabad,
+Faridabad, Gurugram, Sonipat, Bahadurgarh, Palwal, Tauru, Sohna, Meerut, Khurja,
+Panipat — and the **Nashik corridor** plus the Vashi and Pune terminal markets:
+25 mandis, all with real coordinates. **35 crops** across vegetables, fruits, grains,
+pulses and oilseeds, and a farmer can add one the list is missing.
 
 ### A five-minute walkthrough
 
@@ -72,7 +82,9 @@ PIN is `1234` for all of them.
 4. Back as Sunita: her share appears, every other farmer's share **drops**, and a
    payment reminder is scheduled for seven days before the due date.
 5. As Santosh: **Start journey**, then **Send location**. Sunita's trip view tracks it.
-6. Sign in as **Ops** for feed health, fill rates, and money.
+6. Sign in as **Rajbir** (NCR) → *Nearby mandis*. Seventeen markets by distance with
+   today's prices; the badged ones are live from the government feed.
+7. Sign in as **Ops** for feed health, fill rates, money, and **Refresh live prices**.
 
 ---
 
@@ -83,12 +95,13 @@ PIN is `1234` for all of them.
 | `npm run dev` | Development server on port 3100 |
 | `npm run build` | Production build |
 | `npm start` | Serve the production build (reads `PORT`) |
-| `npm test` | Decision-engine unit tests (35, Node's built-in runner) |
+| `npm test` | Unit tests (56, Node's built-in runner) |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint |
 | `npm run db:generate` | Regenerate SQL migrations after editing `src/db/schema.ts` |
 | `npm run db:migrate` | Apply migrations to a real Postgres (needs `DATABASE_URL`) |
-| `npm run db:seed` | Load the Nashik pilot data (idempotent) |
+| `npm run db:seed` | Load the crop catalogue, mandis and pilot demo data (idempotent) |
+| `npm run db:ingest` | Pull current mandi prices from the government feed |
 | `npm run db:reset` | Delete the local PGlite database |
 
 ---
@@ -129,6 +142,7 @@ requirement; an opaque model would fail it.
 | `costs.ts` | Trip cost and the cost-split rule | FR-6 |
 | `netPrice.ts` | Rank mandis by net realisable price | FR-1, FR-2 |
 | `pooling.ts` | En-route matching, best-fill packing, loading order | FR-4, FR-5 |
+| `sources.ts` | Which of two prices for the same mandi to believe | PRD §12 |
 
 **The cost-split rule**, shown to farmers in these words:
 
@@ -149,7 +163,7 @@ candidates it falls back to a greedy pass by value density.
 
 | | | |
 |---|---|---|
-| FR-1 | Mandi prices within a configurable radius | `netPrice.ts`, radius slider 10–300 km |
+| FR-1 | Mandi prices within a configurable radius | `netPrice.ts`, radius slider 10–300 km; `/mandis` browses them by distance |
 | FR-2 | Net realisable price per mandi | `netPrice.ts`, itemised on the slip |
 | FR-3 | Operators list vehicle, capacity, availability | `/operator/trucks` |
 | FR-4 | Match capacity to loads going the same way | `findJoinableTrips`, detour-bounded |
@@ -170,9 +184,9 @@ promise, not a message.
 
 Honest about the seams, so nobody demonstrates these as working integrations:
 
-- **Mandi prices** are representative September figures for the Nashik corridor, seeded
-  and labelled with their source and age. A live Agmarknet/eNAM connector replaces
-  `latestPrices()` in `src/lib/booking.ts` and nothing else changes.
+- **Mandi prices are live** where the government feed reports them, and shipped
+  baselines where it does not — every figure on screen carries its source and age, and
+  live ones are badged. See "Live prices" below.
 - **Payments** record settlement directly instead of calling a UPI gateway. The button
   says so. `/api/transactions/[id]/pay` is where the gateway goes.
 - **SMS and IVR** are stored with the right channel and timing but not dispatched to a
@@ -182,6 +196,51 @@ Honest about the seams, so nobody demonstrates these as working integrations:
 - **Tracking** accepts real GPS from the driver's handset; when the browser refuses
   location it advances the truck along its route rather than inventing a position that
   claims to be measured.
+
+---
+
+## Live prices
+
+Mandi prices come from the Government of India **Agmarknet** feed on data.gov.in
+(resource `9ef84268-d588-465a-a308-a864a43d0070`, published by the Ministry of
+Agriculture and Farmers Welfare), in rupees per quintal — the same unit this app
+stores, so nothing is converted.
+
+```bash
+# free key, about a minute to register at https://data.gov.in
+echo 'DATA_GOV_API_KEY=your-key-here' >> .env.local
+npm run db:ingest
+```
+
+Or press **Refresh live prices** on the admin dashboard. On Render a cron service runs
+it four times a day — Agmarknet markets report through the morning and afternoon, so a
+single overnight run would miss most of them.
+
+Without a key the app still works: it serves the baseline prices shipped in
+`src/data/crops.ts` and labels them as such. It never presents an estimate as live.
+
+**Three things this connector has to handle, and does:**
+
+*The feed has no coordinates.* It reports state, district and market name only. Since
+distance is the basis of every ranking here, prices are pulled only for the mandis in
+`src/data/mandis.ts`, which carry real coordinates and the keys to match the feed.
+
+*The feed carries genuine outliers.* A live response really does quote coriander
+leaves at ₹32,528/quintal. Every crop declares a plausible price range and anything
+outside it is rejected at ingest — a typical run stores 99 prices and throws away 9.
+A farmer driving 200 km on a bad number is the worst failure this product has, so a
+rejected row always beats a wrong one.
+
+*Not every market reports every day.* Coverage varies by the hour. A mandi with no
+fresh figure keeps its last known one, with its age shown; the badge only appears on
+prices that really are live.
+
+Which of two prices to believe is decided in `src/lib/engine/sources.ts`, not by
+recency alone. The shipped baseline is timestamped when it is written, so it can look
+*newer* than a real government price whose arrival stamp is that morning — and the
+farmer would be shown an invented number while a real one sat unused. Within a day of
+each other the more trustworthy source wins; beyond that, recency does, because a
+week-old government price is worse than today's estimate.
 
 ---
 
@@ -238,8 +297,8 @@ npm run lint
 Covering what the development document §8 names — price calculation, cost-split logic,
 and the matching algorithm — plus the properties that matter for trust: shares always
 sum to the trip cost, detours never go negative, a detour is never socialised, the
-exact solver genuinely beats a greedy largest-first choice, and a stale price is marked
-low-confidence.
+exact solver genuinely beats a greedy largest-first choice, a stale price is marked
+low-confidence, and the feed's own outliers are rejected before a farmer ever sees them.
 
 ---
 

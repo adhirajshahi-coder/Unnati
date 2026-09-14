@@ -16,6 +16,8 @@ import { currentUser } from "@/lib/auth";
 import { unreadCount } from "@/lib/notifications";
 import { Page } from "@/components/Shell";
 import { Slip, SlipHeading, Line } from "@/components/Slip";
+import { IngestButton } from "@/components/IngestButton";
+import { hasApiKey } from "@/lib/pricefeed";
 import { rupees, weight } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
@@ -152,6 +154,8 @@ export default async function AdminPage() {
             strong
           />
         </div>
+
+        <IngestButton hasKey={hasApiKey()} />
 
         {feedAge !== null && feedAge > 24 && (
           <p className="mt-2 rounded-[3px] border border-[var(--color-lose)] bg-[var(--color-lose-soft)] px-3 py-2 text-[13px] text-[var(--color-lose)]">

@@ -31,254 +31,60 @@ import {
   feedHealth,
 } from "../src/db/schema";
 import { hashPin } from "../src/lib/auth";
+import { CROPS } from "../src/data/crops";
+import { MANDIS } from "../src/data/mandis";
 import { roadDistanceKm } from "../src/lib/engine/geo";
 import { tripCost, splitCost } from "../src/lib/engine/costs";
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 
-/* ------------------------------------------------------------------ crops */
+/* --------------------------------------------------- reference catalogues */
 
-const CROPS = [
-  {
-    id: "onion",
-    name: "Onion",
-    nameHi: "प्याज़",
-    shelfLifeHours: 720, // ~30 days cured, un-refrigerated
-    spoilageRatePerDay: 0.012,
-    perishability: "MEDIUM",
-    handlingTip:
-      "Cure in shade for 2–3 days before loading. Use ventilated mesh bags, never sealed plastic. Do not stack more than 8 bags high.",
-    handlingTipHi:
-      "लोड करने से पहले 2–3 दिन छाँव में सुखाएँ। जालीदार बोरी इस्तेमाल करें, बंद प्लास्टिक कभी नहीं। 8 बोरी से ऊँचा न लगाएँ।",
-  },
-  {
-    id: "tomato",
-    name: "Tomato",
-    nameHi: "टमाटर",
-    shelfLifeHours: 72,
-    spoilageRatePerDay: 0.085,
-    perishability: "HIGH",
-    handlingTip:
-      "Harvest at breaker stage for distant mandis. Pack in crates, not sacks — sacks crush the bottom layer. Load in the cool of early morning.",
-    handlingTipHi:
-      "दूर की मंडी के लिए हल्का कच्चा तोड़ें। बोरी नहीं, क्रेट में भरें — बोरी में नीचे की परत दब जाती है। सुबह ठंडे समय लोड करें।",
-  },
-  {
-    id: "grape",
-    name: "Grapes",
-    nameHi: "अंगूर",
-    shelfLifeHours: 96,
-    spoilageRatePerDay: 0.07,
-    perishability: "HIGH",
-    handlingTip:
-      "Pre-cool bunches before loading. Line crates with paper. Avoid any midday loading — pulp temperature above 30°C halves shelf life.",
-    handlingTipHi:
-      "लोड करने से पहले गुच्छों को ठंडा करें। क्रेट में कागज़ लगाएँ। दोपहर में लोड न करें — गूदे का तापमान 30°C से ऊपर जाने पर टिकाऊपन आधा रह जाता है।",
-  },
-  {
-    id: "pomegranate",
-    name: "Pomegranate",
-    nameHi: "अनार",
-    shelfLifeHours: 480,
-    spoilageRatePerDay: 0.02,
-    perishability: "MEDIUM",
-    handlingTip:
-      "Grade out cracked fruit before dispatch — one split fruit spoils the crate around it. Cushion with paper on all sides.",
-    handlingTipHi:
-      "भेजने से पहले फटे फल अलग करें — एक फटा फल पूरी क्रेट खराब कर देता है। चारों तरफ कागज़ लगाएँ।",
-  },
-  {
-    id: "wheat",
-    name: "Wheat",
-    nameHi: "गेहूँ",
-    shelfLifeHours: 4320,
-    spoilageRatePerDay: 0.002,
-    perishability: "LOW",
-    handlingTip:
-      "Dry to under 12% moisture before bagging. Keep bags off bare ground on the truck bed to avoid condensation damage.",
-    handlingTipHi:
-      "बोरी भरने से पहले 12% से कम नमी तक सुखाएँ। ट्रक में बोरियाँ ज़मीन से ऊपर रखें ताकि सीलन न लगे।",
-  },
-  {
-    id: "soybean",
-    name: "Soybean",
-    nameHi: "सोयाबीन",
-    shelfLifeHours: 2880,
-    spoilageRatePerDay: 0.003,
-    perishability: "LOW",
-    handlingTip:
-      "Clean out chaff and stones before weighing — mandi deductions for foreign matter are steep. Keep moisture under 10%.",
-    handlingTipHi:
-      "तौल से पहले भूसा और पत्थर साफ़ करें — मंडी में कचरे की कटौती भारी होती है। नमी 10% से कम रखें।",
-  },
-];
-
-/* ----------------------------------------------------------------- mandis */
-
-const MANDIS = [
-  {
-    id: "lasalgaon",
-    name: "Lasalgaon APMC",
-    nameHi: "लासलगाँव मंडी",
-    district: "Nashik",
-    state: "Maharashtra",
-    lat: 20.1467,
-    lng: 74.2394,
-    commissionRate: 0.02,
-    marketFeePerQuintal: 12,
-  },
-  {
-    id: "pimpalgaon",
-    name: "Pimpalgaon Baswant",
-    nameHi: "पिंपळगाव बसवंत",
-    district: "Nashik",
-    state: "Maharashtra",
-    lat: 20.1697,
-    lng: 73.9853,
-    commissionRate: 0.02,
-    marketFeePerQuintal: 10,
-  },
-  {
-    id: "nashik",
-    name: "Nashik APMC",
-    nameHi: "नाशिक मंडी",
-    district: "Nashik",
-    state: "Maharashtra",
-    lat: 19.9975,
-    lng: 73.7898,
-    commissionRate: 0.025,
-    marketFeePerQuintal: 14,
-  },
-  {
-    id: "yeola",
-    name: "Yeola",
-    nameHi: "येवला",
-    district: "Nashik",
-    state: "Maharashtra",
-    lat: 20.0424,
-    lng: 74.4892,
-    commissionRate: 0.02,
-    marketFeePerQuintal: 10,
-  },
-  {
-    id: "manmad",
-    name: "Manmad",
-    nameHi: "मनमाड",
-    district: "Nashik",
-    state: "Maharashtra",
-    lat: 20.2512,
-    lng: 74.4386,
-    commissionRate: 0.02,
-    marketFeePerQuintal: 10,
-  },
-  {
-    id: "chandvad",
-    name: "Chandvad",
-    nameHi: "चांदवड",
-    district: "Nashik",
-    state: "Maharashtra",
-    lat: 20.3306,
-    lng: 74.2436,
-    commissionRate: 0.02,
-    marketFeePerQuintal: 9,
-  },
-  {
-    id: "vashi",
-    name: "Vashi APMC, Navi Mumbai",
-    nameHi: "वाशी मंडी, नवी मुंबई",
-    district: "Thane",
-    state: "Maharashtra",
-    lat: 19.0771,
-    lng: 72.9986,
-    commissionRate: 0.06,
-    marketFeePerQuintal: 30,
-  },
-  {
-    id: "pune",
-    name: "Pune Market Yard",
-    nameHi: "पुणे मार्केट यार्ड",
-    district: "Pune",
-    state: "Maharashtra",
-    lat: 18.4839,
-    lng: 73.8677,
-    commissionRate: 0.05,
-    marketFeePerQuintal: 25,
-  },
-];
+// Crops and mandis live in src/data so the app, the seed and the price ingest all
+// read one list. Adding a crop there is the only edit needed to support it.
 
 /**
- * Representative modal prices, ₹ per quintal.
- *
- * The shape that matters: the terminal markets (Vashi, Pune) pay substantially more
- * than the local mandis, which is why farmers are tempted by them — and why the net
- * calculation, which nets off 200 km of transport and a 6% commission, is the honest
- * answer rather than the headline number.
+ * Fallback prices in Rs/quintal, used to give every mandi a believable starting
+ * figure before the first live ingest and to keep the demo working without an API
+ * key. Real prices replace these as soon as "npm run db:ingest" runs, and the UI
+ * always shows which source a figure came from.
  */
-const PRICES: Record<string, Record<string, number>> = {
-  onion: {
-    lasalgaon: 1850,
-    pimpalgaon: 1790,
-    nashik: 1720,
-    yeola: 1680,
-    manmad: 1705,
-    chandvad: 1760,
-    vashi: 2450,
-    pune: 2280,
-  },
-  tomato: {
-    lasalgaon: 1250,
-    pimpalgaon: 1320,
-    nashik: 1400,
-    yeola: 1180,
-    manmad: 1210,
-    chandvad: 1265,
-    vashi: 2150,
-    pune: 1950,
-  },
-  grape: {
-    lasalgaon: 4200,
-    pimpalgaon: 4650,
-    nashik: 4400,
-    yeola: 3900,
-    manmad: 3850,
-    chandvad: 4100,
-    vashi: 6200,
-    pune: 5700,
-  },
-  pomegranate: {
-    lasalgaon: 6800,
-    pimpalgaon: 7100,
-    nashik: 7250,
-    yeola: 6400,
-    manmad: 6350,
-    chandvad: 6900,
-    vashi: 9500,
-    pune: 8800,
-  },
-  wheat: {
-    lasalgaon: 2420,
-    pimpalgaon: 2400,
-    nashik: 2450,
-    yeola: 2380,
-    manmad: 2395,
-    chandvad: 2410,
-    vashi: 2720,
-    pune: 2650,
-  },
-  soybean: {
-    lasalgaon: 4550,
-    pimpalgaon: 4500,
-    nashik: 4600,
-    yeola: 4480,
-    manmad: 4520,
-    chandvad: 4540,
-    vashi: 4950,
-    pune: 4870,
-  },
+const BASE_PRICE: Record<string, number> = {
+  onion: 2100, tomato: 1900, potato: 1250, cauliflower: 1450, cabbage: 900,
+  brinjal: 1600, okra: 2400, "green-chilli": 3800, cucumber: 1300,
+  "bottle-gourd": 1100, "bitter-gourd": 2600, peas: 4200, carrot: 1700,
+  spinach: 1200, coriander: 3200, garlic: 9500, ginger: 6800,
+  grape: 4600, pomegranate: 7200, banana: 1800, mango: 5200, apple: 8600,
+  papaya: 1400, orange: 3400,
+  wheat: 2450, paddy: 2280, maize: 2050, bajra: 2380,
+  gram: 5600, tur: 7400, moong: 7900,
+  soybean: 4550, mustard: 5700, groundnut: 6300, cotton: 7200,
+};
+
+/**
+ * Terminal markets pay more than a district APMC, which is the gap the whole product
+ * exists to help a farmer capture - and the reason netting off transport matters.
+ */
+const REGION_PREMIUM: Record<string, number> = {
+  NCR: 1.18,
+  Mumbai: 1.3,
+  Pune: 1.21,
+  Nashik: 1.0,
+  Other: 1.0,
 };
 
 /* ------------------------------------------------------------------ main */
+
+/** Postgres binds a limited number of parameters per statement; stay well under it. */
+const CHUNK = 400;
+
+async function insertInChunks(rows: Array<typeof priceRecords.$inferInsert>) {
+  const db = await getDb();
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    await db.insert(priceRecords).values(rows.slice(i, i + CHUNK));
+  }
+}
 
 async function main() {
   const db = await getDb();
@@ -303,55 +109,61 @@ async function main() {
     await db.delete(table);
   }
 
-  console.log("Seeding crops and mandis…");
-  await db.insert(crops).values(CROPS);
+  console.log(`Seeding ${CROPS.length} crops and ${MANDIS.length} mandis…`);
+  // The catalogue is ordered by how commonly each crop is traded; keep that order so
+  // the picker shows onion and tomato first rather than whatever sorts alphabetically.
+  await db.insert(crops).values(
+    CROPS.map((c, i) => ({ ...c, sortOrder: i })),
+  );
   await db.insert(mandis).values(MANDIS);
 
-  /* prices: 6 days of history so the trend view has something to draw */
+  /* prices: 6 days of history, every crop at every mandi */
   console.log("Seeding price history…");
   const priceRows: Array<typeof priceRecords.$inferInsert> = [];
 
-  for (const [cropId, byMandi] of Object.entries(PRICES)) {
-    for (const [mandiId, base] of Object.entries(byMandi)) {
+  for (const crop of CROPS) {
+    const base = BASE_PRICE[crop.id];
+    if (!base) continue;
+
+    for (const mandi of MANDIS) {
+      const premium = REGION_PREMIUM[mandi.region] ?? 1;
+
       for (let daysAgo = 5; daysAgo >= 0; daysAgo--) {
-        // A deterministic wobble: same seed data on every run, but not a flat line.
+        // A deterministic wobble: the same seed data on every run, but not a flat
+        // line, so the trend view and the confidence bands have something real to
+        // work on.
         const wobble =
-          Math.sin((daysAgo + cropId.length + mandiId.length) * 1.7) * 0.045;
-        const modal = Math.round(base * (1 + wobble));
+          Math.sin((daysAgo + crop.id.length + mandi.id.length) * 1.7) * 0.045;
+        const modal = Math.round(base * premium * (1 + wobble));
+
         priceRows.push({
-          mandiId,
-          cropId,
+          mandiId: mandi.id,
+          cropId: crop.id,
           modalPrice: modal,
           minPrice: Math.round(modal * 0.88),
           maxPrice: Math.round(modal * 1.11),
-          arrivalsQuintal: 400 + ((daysAgo * 137 + mandiId.length * 53) % 2600),
-          source: mandiId === "vashi" || mandiId === "pune"
-            ? "ENAM"
-            : daysAgo === 0
-              ? "FIELD_VERIFIED"
-              : "AGMARKNET",
-          // Today's price is 3 hours old, so it reads as HIGH confidence.
+          arrivalsQuintal:
+            400 + ((daysAgo * 137 + mandi.id.length * 53) % 2600),
+          // Seeded figures are labelled as seeded. Only rows written by the live
+          // ingest carry AGMARKNET_LIVE, so the UI never overstates what it knows.
+          source: daysAgo === 0 ? "FIELD_VERIFIED" : "SEED_BASELINE",
           recordedAt: new Date(now - daysAgo * DAY - 3 * HOUR),
         });
       }
     }
   }
-  await db.insert(priceRecords).values(priceRows);
+  // Written in chunks. 35 crops across 25 mandis over six days is a few thousand
+  // rows, and a single INSERT that size pushes past what a driver will carry in one
+  // statement — against a real Postgres over a network it is worse still.
+  await insertInChunks(priceRows);
 
   await db.insert(feedHealth).values([
     {
-      id: "AGMARKNET",
+      id: "SEED_BASELINE",
       lastRunAt: new Date(now - 3 * HOUR),
-      recordsIngested: priceRows.filter((r) => r.source === "AGMARKNET").length,
+      recordsIngested: priceRows.length,
       ok: true,
-      message: "Scheduled ETL completed",
-    },
-    {
-      id: "ENAM",
-      lastRunAt: new Date(now - 3 * HOUR),
-      recordsIngested: priceRows.filter((r) => r.source === "ENAM").length,
-      ok: true,
-      message: "Scheduled ETL completed",
+      message: "Representative baseline prices shipped with the app",
     },
     {
       id: "FIELD_VERIFIED",
@@ -360,6 +172,15 @@ async function main() {
         .length,
       ok: true,
       message: "Field agent submissions",
+    },
+    {
+      // Written here so the ops dashboard shows the live feed as a known source even
+      // before the first ingest, rather than silently omitting it.
+      id: "AGMARKNET_LIVE",
+      lastRunAt: new Date(now - 6 * DAY),
+      recordsIngested: 0,
+      ok: false,
+      message: "Not yet pulled — run: npm run db:ingest",
     },
   ]);
 
@@ -418,6 +239,47 @@ async function main() {
       })),
     )
     .returning();
+
+  // NCR farmers, so the app can be demonstrated where it is being demonstrated. The
+  // pooling scenario below stays in Nashik; these accounts exercise the NCR mandi
+  // ring, which is a different shape - many markets close together rather than a
+  // long haul to one terminal market.
+  await db.insert(users).values(
+    [
+      {
+        phone: "9000000011",
+        name: "Rajbir Singh",
+        village: "Kharkhoda",
+        district: "Sonipat",
+        state: "Haryana",
+        lat: 28.8794,
+        lng: 76.9133,
+      },
+      {
+        phone: "9000000012",
+        name: "Anita Yadav",
+        village: "Najafgarh",
+        district: "South West Delhi",
+        state: "Delhi",
+        lat: 28.6092,
+        lng: 76.9798,
+      },
+      {
+        phone: "9000000013",
+        name: "Mohan Tyagi",
+        village: "Sardhana",
+        district: "Meerut",
+        state: "Uttar Pradesh",
+        lat: 29.1441,
+        lng: 77.6086,
+      },
+    ].map((f) => ({
+      ...f,
+      pinHash: pin,
+      role: "FARMER" as const,
+      language: "hi" as const,
+    })),
+  );
 
   const operatorRows = await db
     .insert(users)
@@ -816,6 +678,8 @@ async function main() {
   console.log("  Demo accounts — PIN 1234 for all:");
   console.log("    Farmer    9000000001  Ramesh Pawar (Vinchur)");
   console.log("    Farmer    9000000002  Sunita Jadhav (Niphad)");
+  console.log("    Farmer    9000000011  Rajbir Singh (Sonipat, NCR)");
+  console.log("    Farmer    9000000012  Anita Yadav (Najafgarh, Delhi)");
   console.log("    Operator  9111111111  Santosh Transport");
   console.log("    Admin     9999999999  UNNATI Ops");
 }

@@ -29,7 +29,12 @@ export default async function SellPage({
 
   const sp = await searchParams;
   const db = await getDb();
-  const cropList = await db.select().from(crops).orderBy(crops.name);
+  // Ordered by prominence so the common, high-volume crops are the ones visible
+  // without expanding; the long tail sits behind "more crops".
+  const cropList = await db
+    .select()
+    .from(crops)
+    .orderBy(crops.sortOrder, crops.name);
   const unread = await unreadCount(user.id);
   const lang = user.language;
 
@@ -69,7 +74,9 @@ export default async function SellPage({
           id: c.id,
           name: c.name,
           nameHi: c.nameHi,
+          category: c.category,
           perishability: c.perishability,
+          isCustom: c.isCustom,
         }))}
         lang={lang}
         initial={{ cropId, quantityKg, grade, hoursAgo, radiusKm }}

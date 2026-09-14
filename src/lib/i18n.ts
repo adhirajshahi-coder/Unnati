@@ -136,6 +136,30 @@ const dict = {
   markInTransit: { en: "Start journey", hi: "यात्रा शुरू करें" },
   markDelivered: { en: "Mark delivered", hi: "पहुँचा दिया" },
 
+  /* crops and mandis */
+  searchCrop: { en: "Search crop", hi: "फ़सल खोजें" },
+  moreCrops: { en: "More crops", hi: "और फ़सलें" },
+  showLess: { en: "Show fewer", hi: "कम दिखाएँ" },
+  addCrop: { en: "Add a crop", hi: "नई फ़सल जोड़ें" },
+  cropNotListed: {
+    en: "Crop not in the list?",
+    hi: "आपकी फ़सल सूची में नहीं है?",
+  },
+  cropNameEn: { en: "Crop name (English)", hi: "फ़सल का नाम (अंग्रेज़ी)" },
+  cropNameHi: { en: "Crop name (Hindi)", hi: "फ़सल का नाम (हिन्दी)" },
+  keepsFor: { en: "Keeps for", hi: "कितने दिन टिकती है" },
+  days: { en: "days", hi: "दिन" },
+  saveCrop: { en: "Save crop", hi: "फ़सल सहेजें" },
+  nearbyMandis: { en: "Nearby mandis", hi: "आस-पास की मंडियाँ" },
+  todaysPrice: { en: "Today’s price", hi: "आज का भाव" },
+  livePrice: { en: "Live", hi: "लाइव" },
+  noPriceToday: { en: "No price reported today", hi: "आज भाव नहीं आया" },
+  allCrops: { en: "All crops", hi: "सभी फ़सलें" },
+  myLocation: { en: "My location", hi: "मेरी जगह" },
+  changeLocation: { en: "Change location", hi: "जगह बदलें" },
+  saveLocation: { en: "Save", hi: "सहेजें" },
+  refreshPrices: { en: "Refresh live prices", hi: "लाइव भाव लाएँ" },
+
   /* empty states */
   noTrips: { en: "No trips yet", hi: "अभी कोई यात्रा नहीं" },
   noAlerts: { en: "No alerts", hi: "कोई सूचना नहीं" },

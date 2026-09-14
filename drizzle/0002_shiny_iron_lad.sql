@@ -1,0 +1,1 @@
+ALTER TABLE "crops" ADD COLUMN "sort_order" integer DEFAULT 999 NOT NULL;

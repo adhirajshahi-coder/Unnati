@@ -113,6 +113,31 @@ export const crops = pgTable("crops", {
   /** Packing and handling guidance — PRD §5.4. */
   handlingTip: text("handling_tip").notNull(),
   handlingTipHi: text("handling_tip_hi").notNull(),
+  /** Grouping for the crop picker: VEGETABLE / FRUIT / GRAIN / PULSE / OILSEED / SPICE. */
+  category: text("category").notNull().default("VEGETABLE"),
+  /**
+   * Commodity name as Agmarknet spells it, used to match rows from the government
+   * feed. Null means no live price is available for this crop and it keeps whatever
+   * was last recorded manually.
+   */
+  agmarknetName: text("agmarknet_name"),
+  /**
+   * Plausible range for a modal price in Rs/quintal. The government feed carries
+   * genuine outliers - a decimal in the wrong place, or a herb priced by a different
+   * convention - and a farmer acting on a bad figure is the worst failure this app
+   * has. Anything outside the range is rejected at ingest rather than shown.
+   */
+  sanePriceMin: integer("sane_price_min").notNull().default(200),
+  sanePriceMax: integer("sane_price_max").notNull().default(50000),
+  /**
+   * Prominence in the crop picker: lower comes first. Ordering alphabetically would
+   * bury onion, tomato and potato behind apple and bajra, which is backwards for
+   * every farmer who opens this screen. Farmer-added crops sort last.
+   */
+  sortOrder: integer("sort_order").notNull().default(999),
+  /** True for a crop a farmer added themselves rather than one we shipped. */
+  isCustom: boolean("is_custom").notNull().default(false),
+  createdBy: text("created_by"),
 });
 
 export const mandis = pgTable(
@@ -129,6 +154,16 @@ export const mandis = pgTable(
     commissionRate: doublePrecision("commission_rate").notNull().default(0.02),
     /** Per-quintal mandi entry + labour charges in rupees. */
     marketFeePerQuintal: integer("market_fee_per_quintal").notNull().default(0),
+    /** Pilot grouping shown in the UI, e.g. "NCR" or "Nashik". */
+    region: text("region").notNull().default("Other"),
+    /**
+     * How this mandi is spelled in the Agmarknet feed. The feed has no coordinates,
+     * so every mandi we can place on a map is listed here with the keys needed to
+     * pull its live prices. Null means prices for it are entered manually.
+     */
+    agmarknetMarket: text("agmarknet_market"),
+    agmarknetState: text("agmarknet_state"),
+    agmarknetDistrict: text("agmarknet_district"),
   },
   (t) => [index("mandis_district_idx").on(t.district)],
 );

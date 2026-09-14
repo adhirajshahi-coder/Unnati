@@ -3,14 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Slip, SlipHeading } from "@/components/Slip";
+import { CropPicker, type CropOption } from "@/components/CropPicker";
 import { t, type Lang } from "@/lib/i18n";
-
-interface CropOption {
-  id: string;
-  name: string;
-  nameHi: string;
-  perishability: string;
-}
 
 /**
  * Harvest entry.
@@ -67,38 +61,12 @@ export function SellForm({
       <form onSubmit={submit} className="space-y-4 pt-2">
         <div>
           <Label>{t("crop", lang)}</Label>
-          {/*
-            Crops as a wrapped button group rather than a <select>: a native picker on
-            a low-end Android hides every option behind a tap, and there are only six.
-          */}
-          <div className="flex flex-wrap gap-1.5">
-            {crops.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => setCropId(c.id)}
-                aria-pressed={cropId === c.id}
-                className={`rounded-[3px] border px-3 py-2 text-left leading-tight ${
-                  cropId === c.id
-                    ? "border-[var(--color-keep)] bg-[var(--color-keep)] text-[var(--color-paper-2)]"
-                    : "border-[var(--color-rule)] bg-[var(--color-paper)]"
-                }`}
-              >
-                <span className="block text-[15px] font-600">
-                  {lang === "hi" ? c.nameHi : c.name}
-                </span>
-                <span
-                  className={`block text-[11px] ${
-                    cropId === c.id
-                      ? "text-[var(--color-paper-edge)]"
-                      : "text-[var(--color-ink-3)]"
-                  }`}
-                >
-                  {lang === "hi" ? c.name : c.nameHi}
-                </span>
-              </button>
-            ))}
-          </div>
+          <CropPicker
+            crops={crops}
+            value={cropId}
+            onChange={setCropId}
+            lang={lang}
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-3">

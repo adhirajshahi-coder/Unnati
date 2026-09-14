@@ -16,6 +16,7 @@ function Icon({ name }: { name: string }) {
   // and so the app ships no icon-font request on a 2G connection.
   const glyphs: Record<string, string> = {
     home: "⌂",
+    mandi: "⌗",
     sell: "₹",
     trips: "⇨",
     money: "▤",
@@ -123,16 +124,19 @@ export function BottomNav({
       ? [
           { href: "/operator", icon: "home", label: t("dashboard", lang), key: "home" },
           { href: "/operator/trucks", icon: "truck", label: t("trucks", lang), key: "trucks" },
+          { href: "/mandis", icon: "mandi", label: t("nearbyMandis", lang), key: "mandis" },
           { href: "/notifications", icon: "bell", label: t("notifications", lang), key: "alerts" },
         ]
       : user.role === "ADMIN"
         ? [
             { href: "/admin", icon: "home", label: t("dashboard", lang), key: "home" },
+            { href: "/mandis", icon: "mandi", label: t("nearbyMandis", lang), key: "mandis" },
             { href: "/notifications", icon: "bell", label: t("notifications", lang), key: "alerts" },
           ]
         : [
             { href: "/farmer", icon: "home", label: t("home", lang), key: "home" },
             { href: "/farmer/sell", icon: "sell", label: t("sell", lang), key: "sell" },
+            { href: "/mandis", icon: "mandi", label: t("nearbyMandis", lang), key: "mandis" },
             { href: "/farmer/trips", icon: "trips", label: t("myTrips", lang), key: "trips" },
             { href: "/farmer/earnings", icon: "money", label: t("earnings", lang), key: "earnings" },
           ];
