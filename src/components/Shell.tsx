@@ -17,6 +17,8 @@ function Icon({ name }: { name: string }) {
   const glyphs: Record<string, string> = {
     home: "⌂",
     mandi: "⌗",
+    help: "?",
+    connect: "◍",
     sell: "₹",
     trips: "⇨",
     money: "▤",
@@ -53,6 +55,13 @@ export function Masthead({
         </Link>
 
         <div className="flex items-center gap-2">
+          <Link
+            href="/help"
+            aria-label={t("instantHelp", lang)}
+            className="flex h-11 w-11 items-center justify-center rounded border border-[var(--color-keep)] bg-[var(--color-keep)] font-display text-[19px] font-700 text-[var(--color-paper-2)]"
+          >
+            ?
+          </Link>
           <Link
             href="/notifications"
             aria-label={t("notifications", lang)}
@@ -125,7 +134,7 @@ export function BottomNav({
           { href: "/operator", icon: "home", label: t("dashboard", lang), key: "home" },
           { href: "/operator/trucks", icon: "truck", label: t("trucks", lang), key: "trucks" },
           { href: "/mandis", icon: "mandi", label: t("nearbyMandis", lang), key: "mandis" },
-          { href: "/notifications", icon: "bell", label: t("notifications", lang), key: "alerts" },
+          { href: "/connect", icon: "connect", label: t("connect", lang), key: "connect" },
         ]
       : user.role === "ADMIN"
         ? [
@@ -138,7 +147,7 @@ export function BottomNav({
             { href: "/farmer/sell", icon: "sell", label: t("sell", lang), key: "sell" },
             { href: "/mandis", icon: "mandi", label: t("nearbyMandis", lang), key: "mandis" },
             { href: "/farmer/trips", icon: "trips", label: t("myTrips", lang), key: "trips" },
-            { href: "/farmer/earnings", icon: "money", label: t("earnings", lang), key: "earnings" },
+            { href: "/connect", icon: "connect", label: t("connect", lang), key: "connect" },
           ];
 
   return (

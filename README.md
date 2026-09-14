@@ -96,7 +96,7 @@ pulses and oilseeds, and a farmer can add one the list is missing.
 | `npm run dev` | Development server on port 3100 |
 | `npm run build` | Production build |
 | `npm start` | Serve the production build (reads `PORT`) |
-| `npm test` | Unit tests (75, Node's built-in runner) |
+| `npm test` | Unit tests (114, Node's built-in runner) |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint |
 | `npm run db:generate` | Regenerate SQL migrations after editing `src/db/schema.ts` |
@@ -146,6 +146,9 @@ requirement; an opaque model would fail it.
 | `grouping.ts` | Vehicle choice and cost projection for a group that has no truck yet | FR-4, PRD §5.2 |
 | `sources.ts` | Which of two prices for the same mandi to believe | PRD §12 |
 
+The assistant in `lib/assistant/` sits on top of these rather than beside them: it
+routes a question to one of these same functions and reports what they return.
+
 **The cost-split rule**, shown to farmers in these words:
 
 1. The shared leg — the run the truck would have made anyway — splits **by weight**.
@@ -176,6 +179,8 @@ candidates it falls back to a greedy pass by value density.
 | FR-9 | Billing notice **7 days** before the due date | `chargeWithReminder` — a payable cannot be created without one |
 | FR-10 | Regional language support | Hindi and English throughout, stored per user |
 | FR-11 | Transaction log for income tracking | `/farmer/earnings` |
+| — | Instant help, grounded in the app’s own data | `/help`, `lib/assistant/` |
+| — | Finding nearby farmers and operators to collaborate with | `/connect` |
 
 FR-9 is enforced structurally rather than by convention: the only function that writes
 a payable also writes its reminder, so the rule cannot be skipped by forgetting a call.
@@ -239,6 +244,64 @@ Two rules keep the split honest. Both were wrong first and were caught by testin
   farmer 112 km off the route was billed ₹4,925 against a ₹1,551 solo cost, because
   the detour cap applied when browsing groups but not when joining one by link. It is
   enforced on the join itself now, with a message saying why and what to do instead.
+
+---
+
+## Instant help
+
+A question box, reachable from the **?** in the masthead on every screen. Ask in
+Hindi, English or the Hinglish people actually type — *"pyaz ka bhav kya hai"*,
+*"truck kaise share karu"*, *"mera kitna paisa baki hai"*.
+
+**Every figure it quotes is read from the database or computed by the decision
+engine** — the same code paths that draw the screens. It answers where to sell, what a
+crop is fetching, whether a group is forming nearby, where a consignment is, what is
+owed, and how to handle a crop.
+
+Where a language model is configured it does exactly two things, and neither is
+sourcing a fact:
+
+1. Read the question and say which of nine intents it is.
+2. Rewrite an already-computed answer into plainer words.
+
+The rewrite is then **checked**: if it carries a different set of rupee figures than
+the original, it is discarded and the computed text is used. A model that quietly
+turns ₹1,551 into ₹1,550 has broken the one rule that matters when a farmer is
+deciding whether to drive 200 km, so it does not get the benefit of the doubt.
+
+```bash
+# optional — the assistant works without it
+OPENROUTER_API_KEY=...        # or ANTHROPIC_API_KEY
+ASSISTANT_MODEL=...           # defaults to a small, cheap model
+```
+
+With no key it runs on keyword matching and templates against the same live data.
+That is a working product, not a degraded one — it is what runs on a deployment with
+no token budget, and it answers instantly on a bad connection. A model is only
+consulted when the keywords are genuinely unsure, so the common questions stay free
+and fast either way.
+
+Matching handles Hindi word order: *"truck kaise share karu"* splits a phrase an
+English-shaped matcher looks for whole, so co-occurring words carry these rather than
+adjacency.
+
+---
+
+## Finding people to share with
+
+Pooling only works if farmers can find each other, so **Connect** lists who is within
+60 km: neighbours heading the same way, what they have ready to send, and the truck
+owners close enough for the pickup run to be worth driving — with their fleet,
+capacity, per-km rate and rating.
+
+Groups already forming lead the page, because a route is the thing worth acting on.
+A farmer in a group can invite a neighbour into it with one tap.
+
+**Phone numbers are not listed.** You get the truck owner's number on a trip you have
+actually joined, because you need to reach your driver. Publishing every farmer's
+number to everyone within 60 km is not a feature, and PRD §8 limits this data to
+matching and logistics. Collaboration happens through an invitation the other person
+can decline — nobody is added to a booking, and so to a charge, by someone else.
 
 ---
 
@@ -332,7 +395,7 @@ network drops is worse than a diagram that always renders.
 ## Testing
 
 ```bash
-npm test        # 35 unit tests on the decision engine
+npm test        # 114 unit tests
 npm run typecheck
 npm run lint
 ```
@@ -341,7 +404,9 @@ Covering what the development document §8 names — price calculation, cost-spl
 and the matching algorithm — plus the properties that matter for trust: shares always
 sum to the trip cost, detours never go negative, a detour is never socialised, the
 exact solver genuinely beats a greedy largest-first choice, a stale price is marked
-low-confidence, and the feed's own outliers are rejected before a farmer ever sees them.
+low-confidence, the feed's own outliers are rejected before a farmer ever sees them,
+a Hinglish question is understood whatever order the words arrive in, and a language
+model cannot alter a figure on its way to the screen.
 
 ---
 

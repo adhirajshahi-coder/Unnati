@@ -97,21 +97,36 @@ export default async function FarmerHome() {
         </span>
       </Link>
 
-      {totalDue > 0 && (
-        <Link href="/farmer/earnings" className="mb-6 block">
-          <Slip>
-            <SlipHeading right={`${dues.length}`}>{t("due", lang)}</SlipHeading>
-            <div className="flex items-baseline justify-between pt-2">
-              <span className="text-[14px] text-[var(--color-ink-2)]">
-                {t("dueIn7Days", lang)}
-              </span>
+      {/*
+        Earnings has no slot in the bottom bar, so it lives here — as the amount due
+        when something is, and as a plain way in when nothing is. A farmer should
+        never have to hunt for their own ledger.
+      */}
+      <Link href="/farmer/earnings" className="mb-6 block">
+        <Slip>
+          <SlipHeading right={totalDue > 0 ? `${dues.length}` : undefined}>
+            {totalDue > 0 ? t("due", lang) : t("earnings", lang)}
+          </SlipHeading>
+          <div className="flex items-baseline justify-between pt-2">
+            <span className="text-[14px] text-[var(--color-ink-2)]">
+              {totalDue > 0
+                ? t("dueIn7Days", lang)
+                : lang === "hi"
+                  ? "कमाई और पिछली बिक्री देखें"
+                  : "Your income and past sales"}
+            </span>
+            {totalDue > 0 ? (
               <span className="tnum text-[22px] font-600 text-[var(--color-lose)]">
                 {rupees(totalDue)}
               </span>
-            </div>
-          </Slip>
-        </Link>
-      )}
+            ) : (
+              <span aria-hidden className="text-[20px] text-[var(--color-ink-3)]">
+                →
+              </span>
+            )}
+          </div>
+        </Slip>
+      </Link>
 
       {activeLoads.length > 0 && (
         <section className="mb-6">

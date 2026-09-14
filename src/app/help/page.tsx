@@ -1,0 +1,67 @@
+import { redirect } from "next/navigation";
+import { currentUser } from "@/lib/auth";
+import { unreadCount } from "@/lib/notifications";
+import { llmConfigured } from "@/lib/assistant";
+import { Page } from "@/components/Shell";
+import { SlipHeading } from "@/components/Slip";
+import { Assistant } from "@/components/Assistant";
+
+export const dynamic = "force-dynamic";
+
+export default async function HelpPage() {
+  const user = await currentUser();
+  if (!user) redirect("/");
+
+  const lang = user.language;
+  const unread = await unreadCount(user.id);
+
+  // Openers differ by role: an operator has no crop to sell and no mandi to choose.
+  const starters =
+    user.role === "OPERATOR"
+      ? lang === "hi"
+        ? [
+            "आस-पास कौन से किसान हैं?",
+            "ट्रक का इंतज़ार करते समूह",
+            "यह ऐप कैसे काम करता है?",
+          ]
+        : [
+            "Which farmers are near me?",
+            "Groups waiting for a truck",
+            "How does this app work?",
+          ]
+      : lang === "hi"
+        ? [
+            "प्याज़ कहाँ बेचूँ?",
+            "टमाटर का आज का भाव",
+            "ट्रक कैसे साझा करूँ?",
+            "मेरा कितना बाकी है?",
+          ]
+        : [
+            "Where should I sell onion?",
+            "Tomato price today",
+            "How do I share a truck?",
+            "How much do I owe?",
+          ];
+
+  return (
+    <Page user={user} lang={lang} active="help" unread={unread}>
+      <div className="flex min-h-[70vh] flex-col">
+        <SlipHeading
+          right={
+            llmConfigured()
+              ? lang === "hi"
+                ? "एआई सहायक"
+                : "AI assistant"
+              : undefined
+          }
+        >
+          {lang === "hi" ? "तुरंत मदद" : "Instant help"}
+        </SlipHeading>
+
+        <div className="mt-3 flex min-h-0 flex-1 flex-col">
+          <Assistant lang={lang} starters={starters} />
+        </div>
+      </div>
+    </Page>
+  );
+}

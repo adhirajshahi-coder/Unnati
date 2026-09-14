@@ -185,6 +185,12 @@ const dict = {
   claimGroup: { en: "Take this group", hi: "यह समूह लें" },
   myGroups: { en: "My groups", hi: "मेरे समूह" },
 
+  /* help and collaboration */
+  help: { en: "Help", hi: "मदद" },
+  connect: { en: "Connect", hi: "जुड़ें" },
+  instantHelp: { en: "Instant help", hi: "तुरंत मदद" },
+  askQuestion: { en: "Ask", hi: "पूछें" },
+
   /* empty states */
   noTrips: { en: "No trips yet", hi: "अभी कोई यात्रा नहीं" },
   noAlerts: { en: "No alerts", hi: "कोई सूचना नहीं" },

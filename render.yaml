@@ -65,6 +65,12 @@ services:
       - key: DATA_GOV_API_KEY
         sync: false
 
+      # Optional. The instant-help assistant works without it, on keyword matching
+      # against the same live data; a key only buys better phrasing and better
+      # handling of unusual questions. It never sources a figure.
+      - key: OPENROUTER_API_KEY
+        sync: false
+
   # Pulls current mandi prices four times a day. Agmarknet markets report through the
   # morning and into the afternoon, so a single overnight run would miss most of them.
   # Times are UTC; 02:30 UTC is 08:00 IST.
