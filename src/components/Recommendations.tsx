@@ -1,6 +1,19 @@
-import Link from "next/link";
 import { Slip, Line, SlipHeading, Stamp } from "@/components/Slip";
+import { TransportChoice } from "@/components/TransportChoice";
 import { rupees, t, weight, type Lang } from "@/lib/i18n";
+
+/** The shared-truck offer for a mandi: a live group, or a projection of starting one. */
+export interface SharedOffer {
+  poolId?: string;
+  memberCount: number;
+  committedKg: number;
+  cost: number;
+  costIfFull: number;
+  soloCost: number;
+  savedPercent: number;
+  vehicle: string;
+  targetKg: number;
+}
 
 export interface RankedView {
   mandiId: string;
@@ -27,6 +40,7 @@ export interface RankedView {
   advantageOverNearest: number;
   confidence: "HIGH" | "MEDIUM" | "LOW";
   soloTransport: number;
+  shared: SharedOffer;
 }
 
 /**
@@ -41,6 +55,10 @@ export function Recommendations({
   crop,
   quantityKg,
   ranked,
+  departAt,
+  origin,
+  cropId,
+  grade,
 }: {
   lang: Lang;
   crop: {
@@ -53,6 +71,10 @@ export function Recommendations({
   };
   quantityKg: number;
   ranked: RankedView[];
+  departAt: string;
+  origin: { name: string; lat: number; lng: number };
+  cropId: string;
+  grade: "A" | "B" | "C";
 }) {
   if (ranked.length === 0) {
     return (
@@ -70,6 +92,22 @@ export function Recommendations({
   return (
     <section className="space-y-5">
       <BestSlip lang={lang} best={best} cropName={cropName} quantityKg={quantityKg} />
+
+      <TransportChoice
+        lang={lang}
+        mandiId={best.mandiId}
+        mandiName={lang === "hi" ? best.mandiNameHi : best.mandiName}
+        distanceKm={best.distanceKm}
+        quantityKg={quantityKg}
+        cropId={cropId}
+        grade={grade}
+        origin={origin}
+        departAt={departAt}
+        soloTransport={best.transportCost}
+        alreadyPooled={best.pooled}
+        pooledTripId={best.pooledTripId}
+        shared={best.shared}
+      />
 
       {rest.length > 0 && (
         <div>
@@ -224,26 +262,6 @@ function BestSlip({
             : "Warning: sent this far, this crop passes its safe window before it arrives. Consider a closer mandi."}
         </p>
       )}
-
-      <div className="mt-4 flex gap-2">
-        {best.pooled && best.pooledTripId ? (
-          <Link
-            href={`/farmer/join/${best.pooledTripId}?qty=${quantityKg}`}
-            role="button"
-            className="flex flex-1 items-center justify-center rounded-[3px] bg-[var(--color-pool)] px-4 font-display text-[16px] font-700 uppercase tracking-[0.06em] text-[var(--color-paper-2)]"
-          >
-            {t("joinTruck", lang)}
-          </Link>
-        ) : (
-          <Link
-            href={`/farmer/trips?mandi=${best.mandiId}`}
-            role="button"
-            className="flex flex-1 items-center justify-center rounded-[3px] border-2 border-[var(--color-keep)] px-4 font-display text-[16px] font-700 uppercase tracking-[0.06em] text-[var(--color-keep)]"
-          >
-            {t("ownTruck", lang)}
-          </Link>
-        )}
-      </div>
 
       <p className="tnum mt-3 text-[11.5px] leading-snug text-[var(--color-ink-3)]">
         {lang === "hi" ? "स्रोत" : "Source"}: {best.source} ·{" "}

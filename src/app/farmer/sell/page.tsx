@@ -4,7 +4,9 @@ import { getDb } from "@/db";
 import { crops } from "@/db/schema";
 import { currentUser } from "@/lib/auth";
 import { unreadCount } from "@/lib/notifications";
-import { recommend, DEFAULT_RATE_PER_KM } from "@/lib/booking";
+import { recommend, soloRateFor } from "@/lib/booking";
+import { findJoinablePools } from "@/lib/pools";
+import { projectNewPool } from "@/lib/engine/grouping";
 import { soloCost } from "@/lib/engine/costs";
 import { Page } from "@/components/Shell";
 import { SellForm } from "@/components/SellForm";
@@ -48,6 +50,7 @@ export default async function SellPage({
     cropId && Number.isFinite(quantityKg) && quantityKg > 0;
 
   let result: Awaited<ReturnType<typeof recommend>> | null = null;
+  let groups: Awaited<ReturnType<typeof findJoinablePools>> = [];
   if (hasQuery) {
     const [crop] = await db
       .select({ id: crops.id })
@@ -64,7 +67,35 @@ export default async function SellPage({
         origin: { lat: user.lat ?? 20.0806, lng: user.lng ?? 74.1103 },
         radiusKm,
       });
+
+      // Groups of farmers already gathering, so the recommendation can offer a
+      // shared truck even when no operator has opened a run to that mandi.
+      groups = await findJoinablePools({
+        lat: user.lat ?? 20.0806,
+        lng: user.lng ?? 74.1103,
+      });
     }
+  }
+
+  /**
+   * The shared-truck offer for one mandi: an existing group if there is one, else a
+   * projection of what starting a group would cost.
+   */
+  function sharedOffer(mandiId: string, distanceKm: number) {
+    const group = groups.find((g) => g.mandiId === mandiId);
+    const projection = projectNewPool(quantityKg, distanceKm);
+
+    return {
+      poolId: group?.id,
+      memberCount: group?.memberCount ?? 0,
+      committedKg: group?.committedKg ?? 0,
+      cost: projection.shareNow,
+      costIfFull: projection.shareIfFull,
+      soloCost: projection.soloCost,
+      savedPercent: projection.savedPercentNow,
+      vehicle: projection.vehicle.type,
+      targetKg: projection.targetKg,
+    };
   }
 
   return (
@@ -120,8 +151,20 @@ export default async function SellPage({
             confidence: r.confidence,
             // What hiring the whole truck alone would have cost, so the saving from
             // sharing is a comparison the farmer can check rather than a claim.
-            soloTransport: soloCost(r.distanceKm, DEFAULT_RATE_PER_KM),
+            soloTransport: soloCost(r.distanceKm, soloRateFor(quantityKg)),
+            // What a shared truck to this mandi would cost — whether or not one is
+            // running yet. Without this a smallholder is only ever quoted a whole
+            // vehicle, which is the problem the product exists to solve.
+            shared: sharedOffer(r.mandi.id, r.distanceKm),
           }))}
+          departAt={new Date(Date.now() + 20 * 3_600_000).toISOString()}
+          origin={{
+            name: user.village ?? "Farm",
+            lat: user.lat ?? 20.0806,
+            lng: user.lng ?? 74.1103,
+          }}
+          cropId={cropId!}
+          grade={grade}
         />
       )}
     </Page>

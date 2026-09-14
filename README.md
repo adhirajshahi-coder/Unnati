@@ -60,7 +60,8 @@ PIN is `1234` for all of them.
 | `9000000002` | Sunita Jadhav, Niphad | Farmer |
 | `9000000011` | Rajbir Singh, Kharkhoda (Sonipat) | Farmer, NCR |
 | `9000000012` | Anita Yadav, Najafgarh (Delhi) | Farmer, NCR |
-| `9111111111` | Santosh Transport | Truck operator |
+| `9111111111` | Santosh Transport, Niphad | Truck operator |
+| `9111111113` | Dahiya Roadlines, Kharkhoda | Truck operator, NCR |
 | `9999999999` | UNNATI Ops | Admin |
 
 ### Where it covers
@@ -95,7 +96,7 @@ pulses and oilseeds, and a farmer can add one the list is missing.
 | `npm run dev` | Development server on port 3100 |
 | `npm run build` | Production build |
 | `npm start` | Serve the production build (reads `PORT`) |
-| `npm test` | Unit tests (56, Node's built-in runner) |
+| `npm test` | Unit tests (75, Node's built-in runner) |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint |
 | `npm run db:generate` | Regenerate SQL migrations after editing `src/db/schema.ts` |
@@ -142,6 +143,7 @@ requirement; an opaque model would fail it.
 | `costs.ts` | Trip cost and the cost-split rule | FR-6 |
 | `netPrice.ts` | Rank mandis by net realisable price | FR-1, FR-2 |
 | `pooling.ts` | En-route matching, best-fill packing, loading order | FR-4, FR-5 |
+| `grouping.ts` | Vehicle choice and cost projection for a group that has no truck yet | FR-4, PRD §5.2 |
 | `sources.ts` | Which of two prices for the same mandi to believe | PRD §12 |
 
 **The cost-split rule**, shown to farmers in these words:
@@ -166,7 +168,7 @@ candidates it falls back to a greedy pass by value density.
 | FR-1 | Mandi prices within a configurable radius | `netPrice.ts`, radius slider 10–300 km; `/mandis` browses them by distance |
 | FR-2 | Net realisable price per mandi | `netPrice.ts`, itemised on the slip |
 | FR-3 | Operators list vehicle, capacity, availability | `/operator/trucks` |
-| FR-4 | Match capacity to loads going the same way | `findJoinableTrips`, detour-bounded |
+| FR-4 | Match capacity to loads going the same way | `findJoinableTrips` for open runs, `pools.ts` for farmer-led groups, both detour-bounded |
 | FR-5 | Suggest the optimal load combination | `bestFill`, exact DP |
 | FR-6 | Split transport cost proportionally | `splitCost`, recomputed on every change |
 | FR-7 | Real-time tracking for everyone on a booking | `/api/trips/[id]/ping`, `/farmer/trip/[id]` |
@@ -196,6 +198,47 @@ Honest about the seams, so nobody demonstrates these as working integrations:
 - **Tracking** accepts real GPS from the driver's handset; when the browser refuses
   location it advances the truck along its route rather than inventing a position that
   claims to be measured.
+
+---
+
+## Sharing a truck
+
+A smallholder with five quintal cannot fill a vehicle. Quoting them a whole truck is
+the problem this product exists to solve, so the app offers two routes to a shared one
+and always prices both against going alone.
+
+**Join a truck already running.** When an operator has an open trip to that mandi with
+room, the farmer buys space on it. Handled in `booking.ts`.
+
+**Start a group when no truck is running**, which is the common case. The farmer says
+where they want to send produce and by when; neighbours within 40 km of the route
+join; the cost per farmer falls as weight accumulates; and once the group passes 60%
+of a vehicle an operator can claim it — at which point it becomes an ordinary trip
+with confirmed loads, a weight-based cost split and a payable per farmer. Handled in
+`pools.ts`, projected by `engine/grouping.ts`.
+
+From the demo data — 5 quintal of onion from Kharkhoda to Noida APMC, 70 km:
+
+| | Cost to the farmer |
+|---|---:|
+| Hire a truck alone (Ashok Leyland Dost) | ₹1,551 |
+| Share a Tata 407 with a 24-quintal group | ₹499 |
+| The same truck, filled | ₹299 |
+
+**The figure shown is what the group costs at its current size, never what it would
+cost full.** A price the group might never reach is not a price, it is bait — so the
+screen carries the cost now, the cost if it fills, and the solo cost together, and
+says plainly when the group is still too small to beat hiring alone.
+
+Two rules keep the split honest. Both were wrong first and were caught by testing:
+
+- *The solo comparison uses the truck the farmer would really hire*, sized to their
+  own load. Comparing against the group's larger vehicle inflated the saving from 61%
+  to 75%, by charging the solo case for capacity the farmer would never have bought.
+- *A detour is charged to whoever caused it, and refused when it is too long.* A test
+  farmer 112 km off the route was billed ₹4,925 against a ₹1,551 solo cost, because
+  the detour cap applied when browsing groups but not when joining one by link. It is
+  enforced on the join itself now, with a message saying why and what to do instead.
 
 ---
 

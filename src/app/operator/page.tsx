@@ -7,6 +7,9 @@ import { currentUser } from "@/lib/auth";
 import { unreadCount } from "@/lib/notifications";
 import { Page } from "@/components/Shell";
 import { Slip, SlipHeading } from "@/components/Slip";
+import { ClaimGroupButton } from "@/components/ClaimGroupButton";
+import { poolsAwaitingTruck } from "@/lib/pools";
+import { tripCost } from "@/lib/engine/costs";
 import { rupees, t, weight } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
@@ -82,8 +85,79 @@ export default async function OperatorHome() {
     (["AVAILABLE"] as string[]).includes(t.status),
   );
 
+  // Farmers who have organised themselves into a load and are waiting for anyone to
+  // carry it. This is demand that already exists — the operator does not have to
+  // gamble on opening a run and hoping it fills.
+  const waitingGroups = await poolsAwaitingTruck({
+    lat: user.lat ?? 20.0806,
+    lng: user.lng ?? 74.1103,
+  });
+
   return (
     <Page user={user} lang={lang} active="home" unread={unread}>
+      {waitingGroups.length > 0 && availableTrucks.length > 0 && (
+        <section className="mb-6">
+          <SlipHeading right={`${waitingGroups.length}`}>
+            {t("groupsWaiting", lang)}
+          </SlipHeading>
+
+          <div className="mt-2 space-y-3">
+            {waitingGroups.map((g, i) => {
+              // What the run is worth: the whole-vehicle charge for the smallest
+              // truck of ours that can carry the group.
+              const truck =
+                myTrucks
+                  .filter((tr) => tr.capacityKg >= g.committedKg)
+                  .sort((a, b) => a.capacityKg - b.capacityKg)[0] ?? null;
+              const revenue = truck
+                ? tripCost(g.distanceKm, truck.ratePerKm)
+                : 0;
+
+              return (
+                <Slip key={g.id}>
+                  <div
+                    className="print-in"
+                    style={{ "--i": i } as React.CSSProperties}
+                  >
+                    <div className="flex items-baseline justify-between gap-2">
+                      <h3 className="text-[18px]">
+                        {lang === "hi" ? g.mandiNameHi : g.mandiName}
+                      </h3>
+                      <span className="tnum shrink-0 text-[13px] font-600 text-[var(--color-pool)]">
+                        {weight(g.committedKg, lang)}
+                      </span>
+                    </div>
+
+                    <p className="tnum text-[12.5px] text-[var(--color-ink-3)]">
+                      {g.memberCount} {lang === "hi" ? "किसान" : "farmers"} ·{" "}
+                      {g.originName} → {Math.round(g.distanceKm)} km ·{" "}
+                      {new Date(g.targetDepartAt).toLocaleString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </p>
+
+                    <ClaimGroupButton
+                      poolId={g.id}
+                      lang={lang}
+                      committedKg={g.committedKg}
+                      estimatedRevenue={revenue}
+                      trucks={availableTrucks.map((tr) => ({
+                        id: tr.id,
+                        label: `${tr.vehicleType} · ${tr.regNo} · ${weight(tr.capacityKg, lang)}`,
+                        capacityKg: tr.capacityKg,
+                      }))}
+                    />
+                  </div>
+                </Slip>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {totalPending > 0 && (
         <div className="mb-5 rounded-[3px] border-2 border-[var(--color-pool)] bg-[var(--color-pool-soft)] px-4 py-3">
           <div className="font-display text-[11px] font-700 uppercase tracking-[0.16em] text-[var(--color-pool)]">

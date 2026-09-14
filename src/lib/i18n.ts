@@ -160,6 +160,31 @@ const dict = {
   saveLocation: { en: "Save", hi: "सहेजें" },
   refreshPrices: { en: "Refresh live prices", hi: "लाइव भाव लाएँ" },
 
+  /* farmer-led pooling groups */
+  shareOption: { en: "Share a truck", hi: "ट्रक साझा करें" },
+  fullTruckOption: { en: "Whole truck, alone", hi: "पूरा ट्रक, अकेले" },
+  startGroup: { en: "Start a shared truck", hi: "साझा ट्रक शुरू करें" },
+  joinGroup: { en: "Join this group", hi: "इस समूह में जुड़ें" },
+  leaveGroup: { en: "Leave the group", hi: "समूह छोड़ें" },
+  groupGathering: { en: "Farmers gathering", hi: "किसान जुड़ रहे हैं" },
+  groupFor: { en: "Group going to", hi: "समूह जा रहा है" },
+  inTheGroup: { en: "In the group", hi: "समूह में" },
+  needMore: { en: "still needed", hi: "और चाहिए" },
+  waitingForTruck: { en: "Waiting for a truck", hi: "ट्रक का इंतज़ार" },
+  readyForTruck: { en: "Ready for a truck", hi: "ट्रक के लिए तैयार" },
+  gotATruck: { en: "Truck booked", hi: "ट्रक मिल गया" },
+  yourCostNow: { en: "Your cost at this size", hi: "अभी के हिसाब से आपका खर्च" },
+  yourCostFull: { en: "If the truck fills", hi: "ट्रक भर जाए तो" },
+  aloneYouPay: { en: "Alone you would pay", hi: "अकेले आपको देना पड़ता" },
+  inviteNeighbours: {
+    en: "The more neighbours join, the less each of you pays.",
+    hi: "जितने ज़्यादा पड़ोसी जुड़ेंगे, उतना कम खर्च सबका।",
+  },
+  groupsNearby: { en: "Groups near you", hi: "आपके पास के समूह" },
+  groupsWaiting: { en: "Groups waiting for a truck", hi: "ट्रक का इंतज़ार करते समूह" },
+  claimGroup: { en: "Take this group", hi: "यह समूह लें" },
+  myGroups: { en: "My groups", hi: "मेरे समूह" },
+
   /* empty states */
   noTrips: { en: "No trips yet", hi: "अभी कोई यात्रा नहीं" },
   noAlerts: { en: "No alerts", hi: "कोई सूचना नहीं" },

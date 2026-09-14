@@ -2,10 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { loads, trips, mandis, crops, trucks } from "@/db/schema";
+import { loads, trips, mandis, crops, trucks, poolMembers } from "@/db/schema";
 import { currentUser } from "@/lib/auth";
 import { unreadCount } from "@/lib/notifications";
 import { findJoinableTrips } from "@/lib/booking";
+import { findJoinablePools } from "@/lib/pools";
 import { Page } from "@/components/Shell";
 import { Slip, SlipHeading } from "@/components/Slip";
 import { rupees, t, weight } from "@/lib/i18n";
@@ -51,8 +52,91 @@ export default async function FarmerTrips() {
   const alreadyOn = new Set(mine.map((m) => m.tripId));
   const joinable = available.filter((a) => !alreadyOn.has(a.id));
 
+  // Groups of farmers gathering a load before any truck exists — usually the only
+  // shared option a smallholder has, since nobody opens a run for ten quintal.
+  const origin = { lat: user.lat ?? 20.0806, lng: user.lng ?? 74.1103 };
+  const groups = await findJoinablePools(origin);
+
+  const memberships = await db
+    .select({ poolId: poolMembers.poolId })
+    .from(poolMembers)
+    .where(eq(poolMembers.farmerId, user.id));
+  const myPoolIds = new Set(memberships.map((m) => m.poolId));
+
   return (
     <Page user={user} lang={lang} active="trips" unread={unread}>
+      {groups.length > 0 && (
+        <section className="mb-6">
+          <SlipHeading right={`${groups.length}`}>
+            {t("groupsNearby", lang)}
+          </SlipHeading>
+          <div className="mt-2 space-y-3">
+            {groups.map((g, i) => {
+              const inIt = myPoolIds.has(g.id);
+              const ready = g.status === "READY";
+              const fill = Math.min(
+                100,
+                Math.round((g.committedKg / g.targetCapacityKg) * 100),
+              );
+
+              return (
+                <Link key={g.id} href={`/farmer/pool/${g.id}`}>
+                  <Slip>
+                    <div
+                      className="print-in"
+                      style={{ "--i": i } as React.CSSProperties}
+                    >
+                      <div className="flex items-baseline justify-between gap-2">
+                        <h3 className="text-[18px]">
+                          {lang === "hi" ? g.mandiNameHi : g.mandiName}
+                        </h3>
+                        <span
+                          className={`shrink-0 text-[12px] font-600 ${
+                            ready
+                              ? "text-[var(--color-keep)]"
+                              : "text-[var(--color-pool)]"
+                          }`}
+                        >
+                          {inIt
+                            ? lang === "hi"
+                              ? "आप इसमें हैं"
+                              : "You are in"
+                            : ready
+                              ? t("readyForTruck", lang)
+                              : t("groupGathering", lang)}
+                        </span>
+                      </div>
+
+                      <p className="tnum mt-0.5 text-[12.5px] text-[var(--color-ink-3)]">
+                        {g.memberCount} {lang === "hi" ? "किसान" : "farmers"} ·{" "}
+                        {weight(g.committedKg, lang)} ·{" "}
+                        {new Date(g.targetDepartAt).toLocaleString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </p>
+
+                      <div className="mt-2 h-2.5 overflow-hidden rounded-[2px] border border-[var(--color-rule-strong)] bg-[var(--color-paper)]">
+                        <div
+                          className={
+                            ready
+                              ? "h-full bg-[var(--color-keep)]"
+                              : "h-full bg-[var(--color-pool)]"
+                          }
+                          style={{ width: `${fill}%` }}
+                        />
+                      </div>
+                    </div>
+                  </Slip>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {joinable.length > 0 && (
         <section className="mb-6">
           <SlipHeading right={`${joinable.length}`}>

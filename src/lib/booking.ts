@@ -21,10 +21,24 @@ import { roadDistanceKm, detourKm } from "@/lib/engine/geo";
 import { tripCost, splitCost, soloCost, savings } from "@/lib/engine/costs";
 import { rankMandis, type MandiCandidate } from "@/lib/engine/netPrice";
 import { pooledQuote, scoreLoads, bestFill } from "@/lib/engine/pooling";
+import { pickVehicle } from "@/lib/engine/grouping";
 import { preferPrice } from "@/lib/engine/sources";
 import { chargeWithReminder, notify, notifyTripWatchers } from "@/lib/notifications";
 
-/** Default whole-vehicle rate when no specific truck has been chosen yet. */
+/**
+ * Whole-vehicle rate for a farmer hiring alone, in rupees per kilometre.
+ *
+ * Sized to the load: a farmer sending five quintal hires a Dost, not a 14-footer, and
+ * charging every solo case a flat mid-size rate overstates transport for exactly the
+ * smallholders this product is for — which would wrongly push them toward a nearer,
+ * worse-paying mandi. Same function the pooling projection uses, so the two figures
+ * on the screen agree.
+ */
+export function soloRateFor(quantityKg: number): number {
+  return pickVehicle(quantityKg).ratePerKm;
+}
+
+/** Fallback where no load size is in hand. */
 export const DEFAULT_RATE_PER_KM = 38;
 /** Farmers pay their transport share this many days after delivery. */
 export const PAYMENT_TERM_DAYS = 14;
@@ -134,7 +148,7 @@ export async function recommend(req: RecommendationRequest) {
     },
     candidates,
     radiusKm: req.radiusKm,
-    soloRatePerKm: DEFAULT_RATE_PER_KM,
+    soloRatePerKm: soloRateFor(req.quantityKg),
     pooledOffers,
   });
 

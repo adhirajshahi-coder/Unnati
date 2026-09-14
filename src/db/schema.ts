@@ -76,6 +76,13 @@ export const notifTypeEnum = pgEnum("notif_type", [
   "SYSTEM",
 ]);
 export const channelEnum = pgEnum("channel", ["PUSH", "SMS", "IVR", "IN_APP"]);
+export const poolStatusEnum = pgEnum("pool_status", [
+  "OPEN", // gathering farmers
+  "READY", // enough weight to be worth a truck
+  "MATCHED", // an operator took it; a trip now exists
+  "EXPIRED", // the dispatch window passed with no truck
+  "CANCELLED",
+]);
 
 /* ------------------------------------------------------------------ users */
 
@@ -366,6 +373,75 @@ export const notifications = pgTable(
   (t) => [index("notif_user_idx").on(t.userId, t.scheduledFor)],
 );
 
+/* ----------------------------------------------------- farmer-led pooling */
+
+/**
+ * A group of farmers gathering to share a truck that does not exist yet.
+ *
+ * The trip-based pooling above only helps when an operator has already opened a run.
+ * A smallholder with ten quintal usually has no such run to join, and quoting them a
+ * whole vehicle is the exact problem this product exists to solve (PRD section 5.2:
+ * "if no truck available, the farmer can book a new truck and the app opens its
+ * remaining capacity to other nearby farmers").
+ *
+ * So a farmer can start the group instead. Neighbours going to the same mandi join,
+ * and once the combined load is worth a vehicle an operator claims it and it becomes
+ * a real trip. Demand organises itself before supply is committed.
+ */
+export const pools = pgTable(
+  "pools",
+  {
+    id: id(),
+    mandiId: text("mandi_id")
+      .notNull()
+      .references(() => mandis.id, { onDelete: "cascade" }),
+    /** Anchored on the farmer who started it; later members add a detour from here. */
+    originName: text("origin_name").notNull(),
+    originLat: doublePrecision("origin_lat").notNull(),
+    originLng: doublePrecision("origin_lng").notNull(),
+    /** When the group wants to leave. Past this with no truck, it expires. */
+    targetDepartAt: timestamp("target_depart_at", { withTimezone: true }).notNull(),
+    /** Capacity of the vehicle the group is aiming to fill. */
+    targetCapacityKg: integer("target_capacity_kg").notNull(),
+    distanceKm: doublePrecision("distance_km").notNull(),
+    status: poolStatusEnum("status").notNull().default("OPEN"),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** Set when an operator claims the group and a real trip is created. */
+    tripId: text("trip_id").references(() => trips.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("pools_mandi_status_idx").on(t.mandiId, t.status, t.targetDepartAt)],
+);
+
+export const poolMembers = pgTable(
+  "pool_members",
+  {
+    id: id(),
+    poolId: text("pool_id")
+      .notNull()
+      .references(() => pools.id, { onDelete: "cascade" }),
+    farmerId: text("farmer_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    listingId: text("listing_id").references(() => listings.id, {
+      onDelete: "set null",
+    }),
+    cropId: text("crop_id")
+      .notNull()
+      .references(() => crops.id),
+    quantityKg: integer("quantity_kg").notNull(),
+    grade: gradeEnum("grade").notNull().default("B"),
+    pickupName: text("pickup_name").notNull(),
+    pickupLat: doublePrecision("pickup_lat").notNull(),
+    pickupLng: doublePrecision("pickup_lng").notNull(),
+    detourKm: doublePrecision("detour_km").notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (t) => [index("pool_members_pool_idx").on(t.poolId)],
+);
+
 /** Single-row table recording the last successful price-feed ingest, for the ops view. */
 export const feedHealth = pgTable("feed_health", {
   id: text("id").primaryKey(), // source name
@@ -385,3 +461,5 @@ export type Trip = typeof trips.$inferSelect;
 export type Load = typeof loads.$inferSelect;
 export type Transaction = typeof transactions.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
+export type Pool = typeof pools.$inferSelect;
+export type PoolMember = typeof poolMembers.$inferSelect;

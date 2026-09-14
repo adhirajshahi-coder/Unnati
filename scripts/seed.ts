@@ -308,6 +308,21 @@ async function main() {
         lat: 20.1467,
         lng: 74.2394,
       },
+      {
+        // An NCR operator, without whom a group of Delhi-side farmers has nobody
+        // within range to carry it — groups are only offered to trucks near enough
+        // for the pickup run to make sense.
+        phone: "9111111113",
+        name: "Dahiya Roadlines",
+        pinHash: pin,
+        role: "OPERATOR" as const,
+        language: "hi" as const,
+        village: "Kharkhoda",
+        district: "Sonipat",
+        state: "Haryana",
+        lat: 28.8794,
+        lng: 76.9133,
+      },
     ])
     .returning();
 
@@ -363,6 +378,30 @@ async function main() {
         lng: 74.2394,
         ratingSum: 19,
         ratingCount: 4,
+      },
+      {
+        operatorId: operatorRows[2].id,
+        regNo: "HR 10 K 3344",
+        vehicleType: "Tata 407 (open body)",
+        capacityKg: 4000,
+        ratePerKm: 34,
+        status: "AVAILABLE" as const,
+        lat: 28.8794,
+        lng: 76.9133,
+        ratingSum: 41,
+        ratingCount: 9,
+      },
+      {
+        operatorId: operatorRows[2].id,
+        regNo: "HR 10 M 8821",
+        vehicleType: "Eicher 14 ft",
+        capacityKg: 9000,
+        ratePerKm: 46,
+        status: "AVAILABLE" as const,
+        lat: 28.8794,
+        lng: 76.9133,
+        ratingSum: 22,
+        ratingCount: 5,
       },
     ])
     .returning();
@@ -680,7 +719,8 @@ async function main() {
   console.log("    Farmer    9000000002  Sunita Jadhav (Niphad)");
   console.log("    Farmer    9000000011  Rajbir Singh (Sonipat, NCR)");
   console.log("    Farmer    9000000012  Anita Yadav (Najafgarh, Delhi)");
-  console.log("    Operator  9111111111  Santosh Transport");
+  console.log("    Operator  9111111111  Santosh Transport (Nashik)");
+  console.log("    Operator  9111111113  Dahiya Roadlines (Sonipat, NCR)");
   console.log("    Admin     9999999999  UNNATI Ops");
 }
 
