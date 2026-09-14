@@ -42,7 +42,7 @@ next-env.d.ts
 
 # Embedded Postgres used for local development
 /.data
-.dev.log
+*.log
 
 # ...but the template is meant to be committed.
 !.env.example
