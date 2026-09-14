@@ -6,7 +6,11 @@ import { currentUser } from "@/lib/auth";
 import { unreadCount } from "@/lib/notifications";
 import { recommend, soloRateFor } from "@/lib/booking";
 import { findJoinablePools } from "@/lib/pools";
-import { projectNewPool } from "@/lib/engine/grouping";
+import {
+  projectNewPool,
+  projectPool,
+  pickVehicle,
+} from "@/lib/engine/grouping";
 import { soloCost } from "@/lib/engine/costs";
 import { Page } from "@/components/Shell";
 import { SellForm } from "@/components/SellForm";
@@ -83,7 +87,20 @@ export default async function SellPage({
    */
   function sharedOffer(mandiId: string, distanceKm: number) {
     const group = groups.find((g) => g.mandiId === mandiId);
-    const projection = projectNewPool(quantityKg, distanceKm);
+
+    // With a real group, quote its real size. Reusing the hypothetical projection
+    // would show a better price than the farmer would actually be charged — the same
+    // mistake as quoting a full truck, just harder to spot.
+    const projection = group
+      ? projectPool(
+          quantityKg,
+          group.committedKg + quantityKg,
+          distanceKm,
+          pickVehicle(
+            Math.max(group.committedKg + quantityKg, group.targetCapacityKg),
+          ),
+        )
+      : projectNewPool(quantityKg, distanceKm);
 
     return {
       poolId: group?.id,
@@ -94,7 +111,11 @@ export default async function SellPage({
       soloCost: projection.soloCost,
       savedPercent: projection.savedPercentNow,
       vehicle: projection.vehicle.type,
-      targetKg: projection.targetKg,
+      // For a real group this is the weight it already has; for a projected one, the
+      // weight the quote assumes it will reach.
+      targetKg: group
+        ? projection.committedKg
+        : (projection as ReturnType<typeof projectNewPool>).targetKg,
     };
   }
 
