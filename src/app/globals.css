@@ -1,26 +1,192 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * UNNATI design tokens.
+ *
+ * The reference object is the mandi patti — the ruled paper slip a farmer is handed
+ * after a sale, listing every deduction as its own line. It is the artifact this
+ * audience already trusts to be honest about money, and the product's central promise
+ * is the same one: no hidden markup, every subtraction shown. So the recommendation
+ * screen is built as that slip, down to the perforated edge and the stamped total.
+ *
+ * Colour is semantic, not decorative: stamp-green is money the farmer keeps,
+ * stamp-red is money that leaves. Those two never swap roles anywhere in the app.
+ *
+ * Type is IBM Plex throughout, chosen because it is the only family with a properly
+ * drawn Devanagari that shares metrics with its Latin — the app is bilingual on every
+ * screen, so Hindi and English have to sit on the same baseline without reflowing.
+ */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* paper and ink */
+  --color-paper: #edeae0;
+  --color-paper-2: #f5f3ec;
+  --color-paper-edge: #e2ded0;
+  --color-ink: #1a1d1a;
+  --color-ink-2: #55594f;
+  --color-ink-3: #8a8d80;
+  --color-rule: #c9c5b6;
+  --color-rule-strong: #a8a394;
+
+  /* semantic money colours */
+  --color-keep: #1b4d3e; /* money the farmer takes home */
+  --color-keep-soft: #e3ece7;
+  --color-lose: #9e2b25; /* deductions, spoilage, anything subtracted */
+  --color-lose-soft: #f6e6e4;
+  --color-pool: #a8730f; /* shared truck / pooling — jute and gunny */
+  --color-pool-soft: #f7eedb;
+
+  --font-display: var(--font-plex-condensed), "Arial Narrow", sans-serif;
+  --font-body: var(--font-plex-devanagari), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  --radius-slip: 3px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/*
+ * Grain. Paper is not a flat fill — without texture the slip reads as a div with a
+ * beige background. One inline SVG turbulence, no image request.
+ */
+@layer base {
+  html {
+    background-color: var(--color-paper);
+  }
+
+  body {
+    background-color: var(--color-paper);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Figures line up in columns or the slip stops looking like a slip. */
+  .tnum {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  /* Touch targets: this app is used standing in a field, one-handed, often in sun. */
+  button,
+  a[role="button"],
+  input,
+  select {
+    min-height: 48px;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-keep);
+    outline-offset: 2px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /*
+   * The slip. A perforated top and bottom edge, cut with a repeating radial mask so
+   * the notches are actual holes in the paper rather than drawn semicircles sitting
+   * on whatever is behind.
+   */
+  .slip {
+    background: var(--color-paper-2);
+    border-left: 1px solid var(--color-rule);
+    border-right: 1px solid var(--color-rule);
+    position: relative;
+    --perf: radial-gradient(
+      circle at 6px 0,
+      transparent 0 5px,
+      var(--color-paper-2) 5.5px
+    );
+  }
+
+  .slip::before,
+  .slip::after {
+    content: "";
+    position: absolute;
+    left: -1px;
+    right: -1px;
+    height: 8px;
+    background-image: var(--perf);
+    background-size: 12px 8px;
+    background-repeat: repeat-x;
+  }
+
+  .slip::before {
+    top: -1px;
+  }
+
+  .slip::after {
+    bottom: -1px;
+    transform: rotate(180deg);
+  }
+
+  /* A ruled line-item row, as on the printed form. */
+  .rule-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px dotted var(--color-rule);
+  }
+
+  /*
+   * The stamp. The single rotated element in the whole app — an APMC seal is stamped
+   * by hand and never sits square, and that is exactly why it reads as authentic
+   * rather than typeset. Everything else stays on the grid.
+   */
+  .stamp {
+    border: 2.5px solid var(--color-keep);
+    color: var(--color-keep);
+    border-radius: 4px;
+    transform: rotate(-2.5deg);
+    box-shadow: inset 0 0 0 1px var(--color-keep);
+  }
+
+  .stamp-lose {
+    border-color: var(--color-lose);
+    color: var(--color-lose);
+    box-shadow: inset 0 0 0 1px var(--color-lose);
+  }
+}
+
+/*
+ * The slip prints top to bottom, so its lines arrive top to bottom. The stagger is
+ * set per row with an inline --i, and it is the only motion in the app.
+ */
+@keyframes print-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.print-in {
+  animation: print-in 0.34s cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .print-in {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }

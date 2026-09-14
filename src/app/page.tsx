@@ -1,103 +1,98 @@
-import Image from "next/image";
+import { redirect } from "next/navigation";
+import { currentUser } from "@/lib/auth";
+import { LoginForm } from "@/components/LoginForm";
 
-export default function Home() {
+// Reads live session and database state, so it must never be prerendered at build time.
+export const dynamic = "force-dynamic";
+
+export default async function Landing() {
+  const user = await currentUser();
+  if (user) {
+    redirect(
+      user.role === "OPERATOR"
+        ? "/operator"
+        : user.role === "ADMIN"
+          ? "/admin"
+          : "/farmer",
+    );
+  }
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-dvh">
+      {/*
+        The masthead states the proposition in the two languages the app runs in, and
+        the claim it leads with is the one the product can actually keep: the mandi
+        that pays most is not always the one with the highest board price.
+      */}
+      <header className="border-b-2 border-[var(--color-ink)] bg-[var(--color-paper-2)]">
+        <div className="mx-auto max-w-3xl px-5 py-7">
+          <div className="font-display text-[clamp(40px,13vw,66px)] font-700 leading-[0.92] tracking-[0.02em]">
+            UNNATI
+          </div>
+          <div className="mt-1 font-body text-[17px] font-500 text-[var(--color-keep)]">
+            कम नुकसान, ज़्यादा मुनाफ़ा
+          </div>
+          <div className="text-[14px] text-[var(--color-ink-2)]">
+            Less loss, more profit
+          </div>
+        </div>
+      </header>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+      <main className="mx-auto max-w-3xl px-5 py-7">
+        <p className="max-w-prose text-[17px] leading-relaxed">
+          The mandi with the highest price board is often not the one that leaves you
+          the most money. UNNATI subtracts transport and spoilage first, then tells you
+          where to go — and finds you a truck to share so the good mandi is affordable.
+        </p>
+
+        <div className="mt-7 grid gap-5 sm:grid-cols-[1fr_1.1fr] sm:items-start">
+          <div className="space-y-3">
+            <Claim
+              n="1"
+              title="Net price, not board price"
+              body="Every deduction shown as a line: commission, market fee, transport, spoilage."
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <Claim
+              n="2"
+              title="Share the truck"
+              body="Join a truck already going your way. Cost splits by weight — the detour is charged to whoever caused it."
+            />
+            <Claim
+              n="3"
+              title="Seven days' notice"
+              body="Every payment is flagged a week before it is due, by SMS if the app cannot reach you."
+            />
+          </div>
+
+          <LoginForm />
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+      <footer className="mx-auto max-w-3xl px-5 pb-10 text-[12.5px] text-[var(--color-ink-3)]">
+        Pilot data: Nashik district, Maharashtra. Prices shown are representative
+        Agmarknet/eNAM figures for demonstration, with the source and age of every
+        figure cited in the app.
       </footer>
+    </div>
+  );
+}
+
+/*
+ * Numbered because these really are a sequence — it is the order the farmer meets them
+ * in: decide where to sell, then how to get there, then when to pay.
+ */
+function Claim({ n, title, body }: { n: string; title: string; body: string }) {
+  return (
+    <div className="flex gap-3 border-b border-dotted border-[var(--color-rule)] pb-3">
+      <span className="tnum shrink-0 text-[13px] font-600 text-[var(--color-pool)]">
+        {n}
+      </span>
+      <span>
+        <span className="block font-display text-[16px] font-700">{title}</span>
+        <span className="block text-[14px] leading-snug text-[var(--color-ink-2)]">
+          {body}
+        </span>
+      </span>
     </div>
   );
 }

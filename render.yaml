@@ -1,0 +1,59 @@
+# Render blueprint for UNNATI.
+#
+# One web service and one Postgres database. Apply this from the Render dashboard
+# (New → Blueprint → pick this repository) and both are created together, wired to
+# each other, with the migrations and seed run before the first release goes live.
+#
+# Free-tier notes, because they will bite otherwise:
+#   - A free web service sleeps after 15 minutes idle and takes ~50 s to wake. The
+#     first page load after a quiet period is slow; that is the plan, not a bug.
+#   - A free Postgres instance expires after 30 days. Upgrade it, or re-create and
+#     re-seed, before demonstrating anything that matters.
+
+databases:
+  - name: unnati-db
+    databaseName: unnati
+    user: unnati
+    plan: free
+    postgresMajorVersion: "16"
+
+services:
+  - type: web
+    name: unnati
+    runtime: node
+    plan: free
+    region: singapore # nearest region to the pilot districts
+    branch: main
+
+    buildCommand: npm ci && npm run build
+
+    # Runs after the build, before the new version takes traffic. Migrations are
+    # idempotent; so is the seed, which rewrites the demo rows rather than appending
+    # to them. Drop the seed once this carries real data.
+    preDeployCommand: npm run db:migrate && npm run db:seed
+
+    startCommand: npm start
+
+    healthCheckPath: /api/health
+
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: unnati-db
+          property: connectionString
+
+      # Render's managed Postgres presents its own CA. Internal connections do not
+      # need to verify it; the app trusts the chain rather than failing closed.
+      - key: DATABASE_SSL
+        value: require
+
+      # Generated once by Render and then held constant, so sessions survive a
+      # redeploy. Changing it signs every user out.
+      - key: SESSION_SECRET
+        generateValue: true
+
+      - key: NODE_ENV
+        value: production
+
+      - key: NODE_VERSION
+        value: "22"

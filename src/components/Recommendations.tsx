@@ -1,0 +1,333 @@
+import Link from "next/link";
+import { Slip, Line, SlipHeading, Stamp } from "@/components/Slip";
+import { rupees, t, weight, type Lang } from "@/lib/i18n";
+
+export interface RankedView {
+  mandiId: string;
+  mandiName: string;
+  mandiNameHi: string;
+  district: string;
+  modalPrice: number;
+  source: string;
+  priceAgeHours: number;
+  distanceKm: number;
+  transitHours: number;
+  quintals: number;
+  grossValue: number;
+  commission: number;
+  marketFee: number;
+  transportCost: number;
+  pooled: boolean;
+  pooledTripId?: string;
+  spoilageLoss: number;
+  spoilagePercent: number;
+  exceedsShelfLife: boolean;
+  netValue: number;
+  netPerQuintal: number;
+  advantageOverNearest: number;
+  confidence: "HIGH" | "MEDIUM" | "LOW";
+  soloTransport: number;
+}
+
+/**
+ * The ranked answer.
+ *
+ * The winner is rendered as a full mandi patti — every deduction on its own ruled
+ * line, totalled with a stamp. The runners-up collapse to one line each, because the
+ * decision is "where do I send this", and four full slips would bury it.
+ */
+export function Recommendations({
+  lang,
+  crop,
+  quantityKg,
+  ranked,
+}: {
+  lang: Lang;
+  crop: {
+    name: string;
+    nameHi: string;
+    handlingTip: string;
+    handlingTipHi: string;
+    shelfLifeHours: number;
+    perishability: string;
+  };
+  quantityKg: number;
+  ranked: RankedView[];
+}) {
+  if (ranked.length === 0) {
+    return (
+      <Slip>
+        <p className="py-6 text-center text-[15px] text-[var(--color-ink-2)]">
+          {t("noMandis", lang)}
+        </p>
+      </Slip>
+    );
+  }
+
+  const [best, ...rest] = ranked;
+  const cropName = lang === "hi" ? crop.nameHi : crop.name;
+
+  return (
+    <section className="space-y-5">
+      <BestSlip lang={lang} best={best} cropName={cropName} quantityKg={quantityKg} />
+
+      {rest.length > 0 && (
+        <div>
+          <SlipHeading right={`${rest.length}`}>
+            {lang === "hi" ? "बाकी मंडियाँ" : "Other mandis"}
+          </SlipHeading>
+          <ol className="mt-1">
+            {rest.map((r, i) => (
+              <li
+                key={r.mandiId}
+                className="print-in flex items-baseline justify-between gap-3 border-b border-dotted border-[var(--color-rule)] py-2.5"
+                style={{ "--i": i + 8 } as React.CSSProperties}
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-[15px]">
+                    {lang === "hi" ? r.mandiNameHi : r.mandiName}
+                  </span>
+                  <span className="tnum block text-[12px] text-[var(--color-ink-3)]">
+                    {r.distanceKm} km · {t("mandiPrice", lang)}{" "}
+                    {rupees(r.modalPrice)}
+                    {r.pooled ? ` · ${t("sharedTruck", lang)}` : ""}
+                  </span>
+                </span>
+                <span className="shrink-0 text-right">
+                  <span className="tnum block text-[16px] font-600">
+                    {rupees(r.netValue)}
+                  </span>
+                  <span className="tnum block text-[12px] text-[var(--color-lose)]">
+                    {rupees(r.advantageOverNearest - best.advantageOverNearest)}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-2 text-[12px] leading-snug text-[var(--color-ink-3)]">
+            {lang === "hi"
+              ? "लाल आँकड़ा = सबसे अच्छे विकल्प के मुकाबले कितना कम मिलेगा।"
+              : "The red figure is how much less you would take home than the best option."}
+          </p>
+        </div>
+      )}
+
+      <HandlingAdvice lang={lang} crop={crop} best={best} />
+    </section>
+  );
+}
+
+function BestSlip({
+  lang,
+  best,
+  cropName,
+  quantityKg,
+}: {
+  lang: Lang;
+  best: RankedView;
+  cropName: string;
+  quantityKg: number;
+}) {
+  const saving = best.pooled
+    ? Math.max(0, best.soloTransport - best.transportCost)
+    : 0;
+
+  return (
+    <Slip lifted>
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="font-display text-[11px] font-700 uppercase tracking-[0.18em] text-[var(--color-keep)]">
+            {t("bestChoice", lang)}
+          </div>
+          <h2 className="text-[26px] leading-tight">
+            {lang === "hi" ? best.mandiNameHi : best.mandiName}
+          </h2>
+          <div className="tnum text-[12.5px] text-[var(--color-ink-3)]">
+            {best.district} · {best.distanceKm} km · {best.transitHours} h
+          </div>
+        </div>
+        <Confidence lang={lang} level={best.confidence} age={best.priceAgeHours} />
+      </div>
+
+      <div className="border-t-2 border-[var(--color-ink)] pt-1">
+        <Line
+          index={0}
+          label={`${cropName} · ${weight(quantityKg, lang)}`}
+          sub={`${t("mandiPrice", lang)} ${rupees(best.modalPrice)} ${t("perQuintal", lang)}`}
+          value={rupees(best.grossValue)}
+          strong
+        />
+        <Line
+          index={1}
+          label={t("commission", lang)}
+          value={`− ${rupees(best.commission)}`}
+          tone="lose"
+        />
+        <Line
+          index={2}
+          label={t("marketFee", lang)}
+          value={`− ${rupees(best.marketFee)}`}
+          tone="lose"
+        />
+        <Line
+          index={3}
+          label={
+            best.pooled
+              ? `${t("transport", lang)} · ${t("sharedTruck", lang)}`
+              : `${t("transport", lang)} · ${t("ownTruck", lang)}`
+          }
+          sub={
+            best.pooled
+              ? `${t("youSave", lang)} ${rupees(saving)}`
+              : undefined
+          }
+          value={`− ${rupees(best.transportCost)}`}
+          tone={best.pooled ? "pool" : "lose"}
+        />
+        <Line
+          index={4}
+          label={t("spoilage", lang)}
+          sub={`${best.spoilagePercent}% · ${best.transitHours} h`}
+          value={`− ${rupees(best.spoilageLoss)}`}
+          tone="lose"
+        />
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
+        <Stamp
+          label={t("youTakeHome", lang)}
+          value={rupees(best.netValue)}
+        />
+        <div className="text-right">
+          <div className="tnum text-[15px] font-600">
+            {rupees(best.netPerQuintal)}
+          </div>
+          <div className="text-[12px] text-[var(--color-ink-3)]">
+            {t("netPrice", lang)} {t("perQuintal", lang)}
+          </div>
+        </div>
+      </div>
+
+      {best.advantageOverNearest > 0 && (
+        <p className="mt-3 rounded-[3px] bg-[var(--color-keep-soft)] px-3 py-2 text-[14px] leading-snug text-[var(--color-keep)]">
+          <span className="tnum font-600">
+            {rupees(best.advantageOverNearest)}
+          </span>{" "}
+          {t("moreThanNearest", lang)}
+        </p>
+      )}
+
+      {best.exceedsShelfLife && (
+        <p className="mt-2 rounded-[3px] border border-[var(--color-lose)] bg-[var(--color-lose-soft)] px-3 py-2 text-[13.5px] leading-snug text-[var(--color-lose)]">
+          {lang === "hi"
+            ? "चेतावनी: इतनी दूर भेजने पर यह फ़सल अपनी टिकाऊ अवधि पार कर जाएगी। नज़दीकी मंडी पर विचार करें।"
+            : "Warning: sent this far, this crop passes its safe window before it arrives. Consider a closer mandi."}
+        </p>
+      )}
+
+      <div className="mt-4 flex gap-2">
+        {best.pooled && best.pooledTripId ? (
+          <Link
+            href={`/farmer/join/${best.pooledTripId}?qty=${quantityKg}`}
+            role="button"
+            className="flex flex-1 items-center justify-center rounded-[3px] bg-[var(--color-pool)] px-4 font-display text-[16px] font-700 uppercase tracking-[0.06em] text-[var(--color-paper-2)]"
+          >
+            {t("joinTruck", lang)}
+          </Link>
+        ) : (
+          <Link
+            href={`/farmer/trips?mandi=${best.mandiId}`}
+            role="button"
+            className="flex flex-1 items-center justify-center rounded-[3px] border-2 border-[var(--color-keep)] px-4 font-display text-[16px] font-700 uppercase tracking-[0.06em] text-[var(--color-keep)]"
+          >
+            {t("ownTruck", lang)}
+          </Link>
+        )}
+      </div>
+
+      <p className="tnum mt-3 text-[11.5px] leading-snug text-[var(--color-ink-3)]">
+        {lang === "hi" ? "स्रोत" : "Source"}: {best.source} ·{" "}
+        {best.priceAgeHours < 1
+          ? lang === "hi"
+            ? "अभी अपडेट हुआ"
+            : "updated just now"
+          : `${Math.round(best.priceAgeHours)} h ${lang === "hi" ? "पहले" : "ago"}`}
+      </p>
+    </Slip>
+  );
+}
+
+/**
+ * Price confidence, stated rather than implied.
+ *
+ * PRD §8 requires the source and age of every figure to be visible. A farmer deciding
+ * to drive 200 km deserves to know the price is four hours old and the day's lots
+ * varied widely.
+ */
+function Confidence({
+  lang,
+  level,
+  age,
+}: {
+  lang: Lang;
+  level: "HIGH" | "MEDIUM" | "LOW";
+  age: number;
+}) {
+  const copy = {
+    HIGH: { en: "Reliable", hi: "भरोसेमंद" },
+    MEDIUM: { en: "Fair", hi: "ठीक-ठाक" },
+    LOW: { en: "Check locally", hi: "पता करें" },
+  }[level];
+
+  const tone =
+    level === "HIGH"
+      ? "border-[var(--color-keep)] text-[var(--color-keep)]"
+      : level === "MEDIUM"
+        ? "border-[var(--color-pool)] text-[var(--color-pool)]"
+        : "border-[var(--color-lose)] text-[var(--color-lose)]";
+
+  return (
+    <div
+      className={`shrink-0 rounded-[3px] border px-2 py-1 text-center ${tone}`}
+    >
+      <div className="text-[12px] font-600 leading-tight">{copy[lang]}</div>
+      <div className="tnum text-[10.5px] leading-tight opacity-80">
+        {Math.round(age)}h
+      </div>
+    </div>
+  );
+}
+
+/** PRD §5.4 — crop-specific handling guidance, shown where it is actionable. */
+function HandlingAdvice({
+  lang,
+  crop,
+  best,
+}: {
+  lang: Lang;
+  crop: {
+    handlingTip: string;
+    handlingTipHi: string;
+    shelfLifeHours: number;
+    perishability: string;
+  };
+  best: RankedView;
+}) {
+  return (
+    <Slip>
+      <SlipHeading
+        right={`${crop.shelfLifeHours} h ${lang === "hi" ? "टिकाऊ" : "shelf life"}`}
+      >
+        {t("handlingTip", lang)}
+      </SlipHeading>
+      <p className="pt-2 text-[15px] leading-relaxed">
+        {lang === "hi" ? crop.handlingTipHi : crop.handlingTip}
+      </p>
+      <p className="mt-2 text-[13px] text-[var(--color-ink-2)]">
+        {lang === "hi"
+          ? `${best.mandiNameHi} तक ${best.transitHours} घंटे लगेंगे। इस दौरान लगभग ${best.spoilagePercent}% नुकसान का अनुमान है।`
+          : `The run to ${best.mandiName} takes about ${best.transitHours} hours, over which roughly ${best.spoilagePercent}% of the value is expected to be lost.`}
+      </p>
+    </Slip>
+  );
+}

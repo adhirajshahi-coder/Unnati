@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Embedded Postgres used for local development
+/.data
+.dev.log
+
+# ...but the template is meant to be committed.
+!.env.example
