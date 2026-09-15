@@ -151,6 +151,9 @@ const dict = {
   days: { en: "days", hi: "दिन" },
   saveCrop: { en: "Save crop", hi: "फ़सल सहेजें" },
   nearbyMandis: { en: "Nearby mandis", hi: "आस-पास की मंडियाँ" },
+  // Short forms for the bottom bar, where a wrapped label leaves the row ragged.
+  mandis: { en: "Mandis", hi: "मंडी" },
+  trips: { en: "Trips", hi: "यात्रा" },
   todaysPrice: { en: "Today’s price", hi: "आज का भाव" },
   livePrice: { en: "Live", hi: "लाइव" },
   noPriceToday: { en: "No price reported today", hi: "आज भाव नहीं आया" },

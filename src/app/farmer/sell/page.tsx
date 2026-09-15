@@ -132,6 +132,7 @@ export default async function SellPage({
         }))}
         lang={lang}
         initial={{ cropId, quantityKg, grade, hoursAgo, radiusKm }}
+        hasResult={Boolean(result)}
       />
 
       {result && (

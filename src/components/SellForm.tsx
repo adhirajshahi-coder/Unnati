@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Slip, SlipHeading } from "@/components/Slip";
 import { CropPicker, type CropOption } from "@/components/CropPicker";
-import { t, type Lang } from "@/lib/i18n";
+import { t, weight, type Lang } from "@/lib/i18n";
 
 /**
  * Harvest entry.
@@ -12,11 +12,17 @@ import { t, type Lang } from "@/lib/i18n";
  * Quantity is entered in quintals because that is the unit a farmer weighs and sells
  * in — the app converts to kilograms internally and never asks anyone to do that
  * conversion themselves.
+ *
+ * Once an answer exists the form folds to a single line. A farmer who has already
+ * asked "where should my onion go" should not have to scroll past a crop picker, two
+ * sliders and a submit button to read the reply — the question becomes a caption on
+ * the answer, and stays one tap from being changed.
  */
 export function SellForm({
   crops,
   lang,
   initial,
+  hasResult = false,
 }: {
   crops: CropOption[];
   lang: Lang;
@@ -27,8 +33,10 @@ export function SellForm({
     hoursAgo: number;
     radiusKm: number;
   };
+  hasResult?: boolean;
 }) {
   const router = useRouter();
+  const [open, setOpen] = useState(!hasResult);
   const [cropId, setCropId] = useState(initial.cropId ?? crops[0]?.id ?? "");
   const [quintals, setQuintals] = useState(
     initial.quantityKg > 0 ? String(initial.quantityKg / 100) : "25",
@@ -54,8 +62,32 @@ export function SellForm({
 
   const selected = crops.find((c) => c.id === cropId);
 
+  if (!open) {
+    const gradeLabel = { A: t("gradeA", lang), B: t("gradeB", lang), C: t("gradeC", lang) }[grade];
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mb-4 flex w-full items-center justify-between gap-3 rounded-[3px] border border-[var(--color-rule-strong)] bg-[var(--color-paper-2)] px-4 py-2.5 text-left"
+      >
+        <span className="min-w-0">
+          <span className="block truncate text-[15px] font-500">
+            {selected ? (lang === "hi" ? selected.nameHi : selected.name) : ""} ·{" "}
+            {weight(Math.round(Number(quintals) * 100), lang)}
+          </span>
+          <span className="tnum block truncate text-[12px] text-[var(--color-ink-3)]">
+            {gradeLabel} · {hoursAgo}h · {radiusKm} km
+          </span>
+        </span>
+        <span className="shrink-0 font-display text-[13px] font-700 uppercase tracking-[0.08em] text-[var(--color-keep)]">
+          {lang === "hi" ? "बदलें" : "Change"}
+        </span>
+      </button>
+    );
+  }
+
   return (
-    <Slip lifted className="mb-6">
+    <Slip lifted className="mb-5">
       <SlipHeading>{t("whatDidYouHarvest", lang)}</SlipHeading>
 
       <form onSubmit={submit} className="space-y-4 pt-2">
