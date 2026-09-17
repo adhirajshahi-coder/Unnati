@@ -81,10 +81,13 @@ export function Masthead({
         moment. It just does not need a second bordered row to say it.
       */}
       <div className="mx-auto flex max-w-3xl items-baseline justify-between gap-2 px-4 pb-1.5">
-        <span className="truncate text-[12px] text-[var(--color-ink-3)]">
+        <Link
+          href="/settings"
+          className="min-w-0 truncate text-[12px] text-[var(--color-ink-3)] underline decoration-dotted underline-offset-2"
+        >
           {user.name}
           {user.village ? ` · ${user.village}` : ""}
-        </span>
+        </Link>
         <form action="/api/auth/logout" method="post">
           <button
             type="submit"

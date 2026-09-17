@@ -28,6 +28,7 @@ import {
   trackingPings,
   transactions,
   notifications,
+  whatsappMessages,
   feedHealth,
 } from "../src/db/schema";
 import { hashPin } from "../src/lib/auth";
@@ -94,6 +95,7 @@ async function main() {
   // Order matters: children before parents.
   for (const table of [
     trackingPings,
+    whatsappMessages,
     notifications,
     transactions,
     loads,
@@ -236,6 +238,10 @@ async function main() {
         language: "hi" as const,
         district: "Nashik",
         state: "Maharashtra",
+        // Demo accounts arrive opted in so the WhatsApp channel is visible without
+        // hunting for a toggle first. A real signup starts opted out.
+        whatsappOptIn: true,
+        whatsappOptInAt: new Date(now - 7 * DAY),
       })),
     )
     .returning();
@@ -278,6 +284,8 @@ async function main() {
       pinHash: pin,
       role: "FARMER" as const,
       language: "hi" as const,
+      whatsappOptIn: true,
+      whatsappOptInAt: new Date(now - 7 * DAY),
     })),
   );
 
@@ -290,6 +298,8 @@ async function main() {
         pinHash: pin,
         role: "OPERATOR" as const,
         language: "hi" as const,
+        whatsappOptIn: true,
+        whatsappOptInAt: new Date(now - 7 * DAY),
         village: "Niphad",
         district: "Nashik",
         state: "Maharashtra",
@@ -302,6 +312,8 @@ async function main() {
         pinHash: pin,
         role: "OPERATOR" as const,
         language: "en" as const,
+        whatsappOptIn: true,
+        whatsappOptInAt: new Date(now - 7 * DAY),
         village: "Lasalgaon",
         district: "Nashik",
         state: "Maharashtra",
@@ -317,6 +329,8 @@ async function main() {
         pinHash: pin,
         role: "OPERATOR" as const,
         language: "hi" as const,
+        whatsappOptIn: true,
+        whatsappOptInAt: new Date(now - 7 * DAY),
         village: "Kharkhoda",
         district: "Sonipat",
         state: "Haryana",

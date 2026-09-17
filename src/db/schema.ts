@@ -75,7 +75,22 @@ export const notifTypeEnum = pgEnum("notif_type", [
   "SPOILAGE_WARNING",
   "SYSTEM",
 ]);
-export const channelEnum = pgEnum("channel", ["PUSH", "SMS", "IVR", "IN_APP"]);
+export const channelEnum = pgEnum("channel", [
+  "PUSH",
+  "SMS",
+  "IVR",
+  "IN_APP",
+  "WHATSAPP",
+]);
+export const waDirectionEnum = pgEnum("wa_direction", ["OUTBOUND", "INBOUND"]);
+export const waStatusEnum = pgEnum("wa_status", [
+  "QUEUED", // written, provider not called yet
+  "SENT", // provider accepted it
+  "DELIVERED", // reached the handset
+  "READ",
+  "FAILED",
+  "SKIPPED", // opted out, or no credentials configured
+]);
 export const poolStatusEnum = pgEnum("pool_status", [
   "OPEN", // gathering farmers
   "READY", // enough weight to be worth a truck
@@ -100,6 +115,24 @@ export const users = pgTable(
     state: text("state"),
     lat: doublePrecision("lat"),
     lng: doublePrecision("lng"),
+    /**
+     * WhatsApp delivery. Opt-in is stored with the moment it was given because Meta
+     * requires a business to be able to show when and how a user consented, and
+     * because sending to someone who never agreed is the fastest way to lose the
+     * number for everyone.
+     */
+    whatsappOptIn: boolean("whatsapp_opt_in").notNull().default(false),
+    whatsappOptInAt: timestamp("whatsapp_opt_in_at", { withTimezone: true }),
+    /** Null means use the login number; some farmers use WhatsApp on a second SIM. */
+    whatsappNumber: text("whatsapp_number"),
+    /**
+     * Last message the user sent us. WhatsApp only allows free-form replies within
+     * 24 hours of one; outside that window every message must be a pre-approved
+     * template. This is what that clock is read from.
+     */
+    whatsappLastInboundAt: timestamp("whatsapp_last_inbound_at", {
+      withTimezone: true,
+    }),
     createdAt: createdAt(),
   },
   (t) => [index("users_role_idx").on(t.role)],
@@ -442,6 +475,44 @@ export const poolMembers = pgTable(
   (t) => [index("pool_members_pool_idx").on(t.poolId)],
 );
 
+/**
+ * Every WhatsApp message in or out.
+ *
+ * Kept separately from `notifications` because the two answer different questions.
+ * A notification is what the app decided to tell someone; this is what actually
+ * reached their handset, when, and what the carrier said about it. "Sent" that nobody
+ * confirmed is not delivery, and on a channel a farmer is relying on for a payment
+ * reminder the difference matters.
+ */
+export const whatsappMessages = pgTable(
+  "whatsapp_messages",
+  {
+    id: id(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    notificationId: text("notification_id").references(() => notifications.id, {
+      onDelete: "set null",
+    }),
+    direction: waDirectionEnum("direction").notNull().default("OUTBOUND"),
+    /** Null for a free-form reply inside the 24-hour window, and for inbound. */
+    templateName: text("template_name"),
+    /** What was actually sent or received, for the ops view and for disputes. */
+    body: text("body").notNull(),
+    status: waStatusEnum("status").notNull().default("QUEUED"),
+    /** The provider's id, which delivery receipts arrive against. */
+    providerMessageId: text("provider_message_id"),
+    error: text("error"),
+    createdAt: createdAt(),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("wa_user_idx").on(t.userId, t.createdAt),
+    index("wa_provider_idx").on(t.providerMessageId),
+  ],
+);
+
 /** Single-row table recording the last successful price-feed ingest, for the ops view. */
 export const feedHealth = pgTable("feed_health", {
   id: text("id").primaryKey(), // source name
@@ -462,4 +533,5 @@ export type Load = typeof loads.$inferSelect;
 export type Transaction = typeof transactions.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type Pool = typeof pools.$inferSelect;
+export type WhatsappMessage = typeof whatsappMessages.$inferSelect;
 export type PoolMember = typeof poolMembers.$inferSelect;

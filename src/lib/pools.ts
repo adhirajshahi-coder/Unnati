@@ -304,7 +304,13 @@ export async function joinOrStartPool(input: JoinPoolInput) {
   }
 
   if (created) {
-    await alertNeighbours(poolId, mandi.name, origin, input.farmerId);
+    await alertNeighbours(
+      poolId,
+      mandi.name,
+      origin,
+      input.farmerId,
+      input.quantityKg,
+    );
   }
 
   await refreshPoolStatus(poolId);
@@ -358,6 +364,12 @@ export async function refreshPoolStatus(poolId: string) {
         bodyHi: `${mandi?.name ?? "मंडी"} जाने वाले समूह में ${committedKg} किलो हो गया है। अब ट्रक मालिक इसे ले सकते हैं।`,
         channel: "PUSH",
         href: `/farmer/pool/${poolId}`,
+        // unnati_pooling_alert: mandi, farmer count, weight gathered.
+        whatsapp: [
+          mandi?.name ?? "the mandi",
+          String(members.length),
+          `${committedKg} kg`,
+        ],
       }),
     ),
   );
@@ -369,6 +381,7 @@ async function alertNeighbours(
   mandiName: string,
   origin: { lat: number; lng: number },
   starterId: string,
+  startingKg: number,
   radiusKm = 30,
 ) {
   const db = await getDb();
@@ -398,6 +411,10 @@ async function alertNeighbours(
           "उनके साथ जुड़कर एक ही ट्रक साझा करें। जितने ज़्यादा किसान, उतना कम खर्च।",
         channel: "PUSH",
         href: `/farmer/pool/${poolId}`,
+        // The message most worth a farmer's phone buzzing: a truck they could share
+        // is being assembled a few kilometres away, and the window is hours long.
+        // unnati_pooling_alert: mandi, farmer count, weight gathered.
+        whatsapp: [mandiName, "1", `${startingKg} kg`],
       }),
     ),
   );

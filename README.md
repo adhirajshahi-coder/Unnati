@@ -96,13 +96,14 @@ pulses and oilseeds, and a farmer can add one the list is missing.
 | `npm run dev` | Development server on port 3100 |
 | `npm run build` | Production build |
 | `npm start` | Serve the production build (reads `PORT`) |
-| `npm test` | Unit tests (114, Node's built-in runner) |
+| `npm test` | Unit tests (134, Node's built-in runner) |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint |
 | `npm run db:generate` | Regenerate SQL migrations after editing `src/db/schema.ts` |
 | `npm run db:migrate` | Apply migrations to a real Postgres (needs `DATABASE_URL`) |
 | `npm run db:seed` | Load the crop catalogue, mandis and pilot demo data (idempotent) |
 | `npm run db:ingest` | Pull current mandi prices from the government feed |
+| `npm run wa:templates` | Print the WhatsApp templates to register with Meta |
 | `npm run db:reset` | Delete the local PGlite database |
 
 ---
@@ -175,7 +176,7 @@ candidates it falls back to a greedy pass by value density.
 | FR-5 | Suggest the optimal load combination | `bestFill`, exact DP |
 | FR-6 | Split transport cost proportionally | `splitCost`, recomputed on every change |
 | FR-7 | Real-time tracking for everyone on a booking | `/api/trips/[id]/ping`, `/farmer/trip/[id]` |
-| FR-8 | Price and pooling notifications | `notifications.ts`; opening a trip alerts farmers within 35 km |
+| FR-8 | Price and pooling notifications | `notifications.ts`; opening a trip alerts farmers within 35 km, and WhatsApp carries them to anyone opted in |
 | FR-9 | Billing notice **7 days** before the due date | `chargeWithReminder` — a payable cannot be created without one |
 | FR-10 | Regional language support | Hindi and English throughout, stored per user |
 | FR-11 | Transaction log for income tracking | `/farmer/earnings` |
@@ -197,7 +198,8 @@ Honest about the seams, so nobody demonstrates these as working integrations:
 - **Payments** record settlement directly instead of calling a UPI gateway. The button
   says so. `/api/transactions/[id]/pay` is where the gateway goes.
 - **SMS and IVR** are stored with the right channel and timing but not dispatched to a
-  carrier. `notify()` is the handoff point.
+  carrier. `notify()` is the handoff point. **WhatsApp is fully built** and needs only
+  Meta credentials and approved templates — see above.
 - **Registration has no OTP.** Anyone can register any number. This must be fixed
   before real users — see `/api/auth/register`.
 - **Tracking** accepts real GPS from the driver's handset; when the browser refuses
@@ -244,6 +246,61 @@ Two rules keep the split honest. Both were wrong first and were caught by testin
   farmer 112 km off the route was billed ₹4,925 against a ₹1,551 solo cost, because
   the detour cap applied when browsing groups but not when joining one by link. It is
   enforced on the join itself now, with a message saying why and what to do instead.
+
+---
+
+## WhatsApp alerts
+
+Farmers and truck operators can have every alert delivered to WhatsApp — mandi prices,
+a truck-sharing group forming nearby, the seven-day payment reminder, a consignment
+changing status. For this audience it is the channel that actually works: it arrives
+on a weak connection, it survives the app being closed, and it is where they already
+are.
+
+```bash
+npm run wa:templates          # prints what to register with Meta
+# then set WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_ACCESS_TOKEN, WHATSAPP_VERIFY_TOKEN
+# and point Meta's webhook at https://<your-app>/api/whatsapp/webhook
+```
+
+**The constraint most WhatsApp integrations discover too late:** Meta does not let a
+business send arbitrary text. Outside a 24-hour window opened by the *user* messaging
+*you*, every message must be a **template approved in advance**, with variables passed
+as ordered parameters. Every alert this app sends is business-initiated, so all of them
+fall under that rule.
+
+So `lib/whatsapp/templates.ts` is not a formatting helper — it is the contract with
+Meta, and `npm run wa:templates` prints it in submission form. A test asserts each
+template declares as many parameters as its body uses, and that Hindi and English use
+the same variable numbers, because a mismatch is rejected at review and nobody notices
+until an alert silently stops going out.
+
+**Farmers can also ask it things.** A message inbound opens that 24-hour window, which
+makes plain replies legal — so `pyaz ka bhav kya hai` sent to the business number is
+routed through the same assistant the app uses, and answered with the same figures from
+the same engine. A farmer who cannot keep the app open on a weak connection still gets
+the real number.
+
+Other decisions worth knowing:
+
+- **Opt-in is stored with the moment it was given.** Meta requires a business to show
+  when and how someone consented, and a farmer who did not understand what they agreed
+  to will block the number — which costs the channel for everyone on it. Replying STOP
+  turns it off, in Hindi or English, and the app honours it immediately.
+- **Delivery is tracked, not assumed.** `whatsapp_messages` records every message in
+  and out with its real status from Meta's receipts. "Sent" that nobody confirmed is
+  not delivery, and on a channel carrying a payment reminder the difference matters.
+  Receipts arrive out of order, so a late *sent* never overwrites a *read*.
+- **A number is normalised or refused, never guessed.** `+91`, a leading zero, spaces
+  from a contact card all resolve to the same id; a landline or a short code is
+  refused, because guessing there means messaging a stranger.
+- **Reminders go out when they are due, not when they are written.** A billing reminder
+  is created the moment a charge is raised but scheduled for seven days before the due
+  date; messaging three weeks early would train people to ignore the channel.
+
+Without credentials the app records what it would have sent and marks it `SKIPPED` —
+visible on the ops dashboard, which is far more useful during a pilot than silently
+dropping it.
 
 ---
 

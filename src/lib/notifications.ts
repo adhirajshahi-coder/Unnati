@@ -19,6 +19,7 @@ import { and, eq, lte, desc, isNull } from "drizzle-orm";
 import { getDb } from "@/db";
 import { notifications, transactions } from "@/db/schema";
 import { rupees } from "@/lib/i18n";
+import { dispatchWhatsapp } from "@/lib/whatsapp";
 
 /** FR-9 — how far ahead of a due date a billing reminder is raised. */
 export const BILLING_NOTICE_DAYS = 7;
@@ -43,25 +44,61 @@ export interface NotifyInput {
   channel?: Channel;
   scheduledFor?: Date;
   href?: string;
+  /**
+   * Ordered parameters for the WhatsApp template that carries this type. Supplying
+   * them is what sends it onward to WhatsApp for anyone who has opted in; without
+   * them the notification stays in the app, which is the right default for anything
+   * not worth a message on someone's phone.
+   */
+  whatsapp?: string[];
 }
 
 export async function notify(input: NotifyInput) {
   const db = await getDb();
   const scheduledFor = input.scheduledFor ?? new Date();
+  const dueNow = scheduledFor.getTime() <= Date.now();
 
-  await db.insert(notifications).values({
-    userId: input.userId,
-    type: input.type,
-    title: input.title,
-    body: input.body,
-    titleHi: input.titleHi,
-    bodyHi: input.bodyHi,
-    channel: input.channel ?? "IN_APP",
-    scheduledFor,
-    // A notification scheduled for now is delivered now; a future one waits.
-    sentAt: scheduledFor.getTime() <= Date.now() ? new Date() : null,
-    href: input.href,
-  });
+  const [row] = await db
+    .insert(notifications)
+    .values({
+      userId: input.userId,
+      type: input.type,
+      title: input.title,
+      body: input.body,
+      titleHi: input.titleHi,
+      bodyHi: input.bodyHi,
+      channel: input.channel ?? "IN_APP",
+      scheduledFor,
+      // A notification scheduled for now is delivered now; a future one waits.
+      sentAt: dueNow ? new Date() : null,
+      href: input.href,
+    })
+    .returning();
+
+  /*
+   * WhatsApp goes out only when the notification is actually due. A billing reminder
+   * is written the moment a charge is raised but scheduled for seven days before the
+   * due date — messaging someone three weeks early would defeat the point of the
+   * rule and train them to ignore the channel.
+   *
+   * Failures here never fail the caller: a booking must not roll back because Meta
+   * was briefly unreachable. The attempt is recorded either way.
+   */
+  if (input.whatsapp && dueNow) {
+    try {
+      await dispatchWhatsapp({
+        userId: input.userId,
+        notificationId: row.id,
+        notifType: input.type,
+        params: input.whatsapp,
+        fallbackText: input.body,
+      });
+    } catch {
+      // Recorded in whatsapp_messages by the dispatcher; nothing to add here.
+    }
+  }
+
+  return row;
 }
 
 /**
@@ -122,6 +159,12 @@ export async function chargeWithReminder(opts: {
     // immediately, not silently skip.
     scheduledFor: remindAt.getTime() > Date.now() ? remindAt : new Date(),
     href: "/farmer/earnings",
+    // unnati_billing_reminder: amount, due date, what it is for.
+    whatsapp: [
+      rupees(opts.amount),
+      due,
+      opts.mandiName ? `transport to ${opts.mandiName}` : "transport",
+    ],
   });
 
   return txn;
@@ -176,6 +219,7 @@ export async function notifyTripWatchers(
   body: string,
   titleHi?: string,
   bodyHi?: string,
+  whatsapp?: string[],
 ) {
   await Promise.all(
     farmerIds.map((userId) =>
@@ -188,6 +232,7 @@ export async function notifyTripWatchers(
         bodyHi,
         channel: "PUSH",
         href: `/farmer/trip/${tripId}`,
+        whatsapp,
       }),
     ),
   );

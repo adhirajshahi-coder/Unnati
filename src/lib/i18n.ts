@@ -193,6 +193,8 @@ const dict = {
   connect: { en: "Connect", hi: "जुड़ें" },
   instantHelp: { en: "Instant help", hi: "तुरंत मदद" },
   askQuestion: { en: "Ask", hi: "पूछें" },
+  settings: { en: "Settings", hi: "सेटिंग" },
+  whatsappAlerts: { en: "WhatsApp alerts", hi: "व्हाट्सएप सूचनाएँ" },
 
   /* empty states */
   noTrips: { en: "No trips yet", hi: "अभी कोई यात्रा नहीं" },

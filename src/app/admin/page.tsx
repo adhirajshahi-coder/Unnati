@@ -18,6 +18,11 @@ import { Page } from "@/components/Shell";
 import { Slip, SlipHeading, Line } from "@/components/Slip";
 import { IngestButton } from "@/components/IngestButton";
 import { hasApiKey } from "@/lib/pricefeed";
+import {
+  recentMessages,
+  optInCounts,
+  whatsappConfigured,
+} from "@/lib/whatsapp";
 import { rupees, weight } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
@@ -110,6 +115,13 @@ export default async function AdminPage() {
         )
       : null;
 
+  const waMessages = await recentMessages(12);
+  const waOptIns = await optInCounts();
+  const waDelivered = waMessages.filter((m) =>
+    ["DELIVERED", "READ"].includes(m.status),
+  ).length;
+  const waFailed = waMessages.filter((m) => m.status === "FAILED").length;
+
   const pooled = allTrips.filter((t) => t.usedKg > 0);
   const feedAge = priceStats?.newest
     ? Math.round(
@@ -199,6 +211,69 @@ export default async function AdminPage() {
             value={String(notifStats?.scheduled ?? 0)}
           />
         </div>
+      </Slip>
+
+      <Slip className="mb-5">
+        <SlipHeading
+          right={
+            whatsappConfigured() ? "connected" : "not connected"
+          }
+        >
+          WhatsApp
+        </SlipHeading>
+
+        <div className="pt-1">
+          <Line
+            index={0}
+            label="Farmers opted in"
+            value={String(waOptIns.farmers)}
+            tone="keep"
+          />
+          <Line
+            index={1}
+            label="Truck operators opted in"
+            value={String(waOptIns.operators)}
+            tone="keep"
+          />
+          <Line
+            index={2}
+            label="Delivered, of the last 12"
+            value={String(waDelivered)}
+          />
+          <Line
+            index={3}
+            label="Failed, of the last 12"
+            value={String(waFailed)}
+            tone={waFailed > 0 ? "lose" : "neutral"}
+          />
+        </div>
+
+        {!whatsappConfigured() && (
+          <p className="mt-2 rounded-[3px] border border-[var(--color-pool)] bg-[var(--color-pool-soft)] px-3 py-2 text-[13px] leading-snug text-[var(--color-pool)]">
+            Set WHATSAPP_PHONE_NUMBER_ID and WHATSAPP_ACCESS_TOKEN, register the
+            templates from <code className="tnum">npm run wa:templates</code>, and
+            point Meta at <code className="tnum">/api/whatsapp/webhook</code>. Until
+            then messages are recorded here but not dispatched.
+          </p>
+        )}
+
+        {waMessages.length > 0 && (
+          <ul className="mt-3 border-t border-dotted border-[var(--color-rule)] pt-1">
+            {waMessages.slice(0, 6).map((m) => (
+              <li
+                key={m.id}
+                className="border-b border-dotted border-[var(--color-rule)] py-1.5 last:border-0"
+              >
+                <p className="truncate text-[13px]">{m.body}</p>
+                <p className="tnum text-[11px] text-[var(--color-ink-3)]">
+                  {m.direction === "INBOUND" ? "in" : "out"} · {m.userName} ·{" "}
+                  {m.status}
+                  {m.error ? ` · ${m.error}` : ""}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
       </Slip>
 
       <section>

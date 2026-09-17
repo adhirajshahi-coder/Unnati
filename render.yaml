@@ -71,6 +71,17 @@ services:
       - key: OPENROUTER_API_KEY
         sync: false
 
+      # WhatsApp alerts. Optional: without them the app records messages and marks
+      # them SKIPPED rather than failing. Register the templates from
+      # "npm run wa:templates" in Meta WhatsApp Manager first, then point the webhook
+      # at https://<service>.onrender.com/api/whatsapp/webhook
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_ACCESS_TOKEN
+        sync: false
+      - key: WHATSAPP_VERIFY_TOKEN
+        sync: false
+
   # Pulls current mandi prices four times a day. Agmarknet markets report through the
   # morning and into the afternoon, so a single overnight run would miss most of them.
   # Times are UTC; 02:30 UTC is 08:00 IST.
