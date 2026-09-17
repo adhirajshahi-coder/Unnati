@@ -18,6 +18,7 @@ import { t } from "@/lib/i18n";
 import type { User } from "@/db/schema";
 import { Icon, type IconName } from "@/components/Icon";
 import { LanguageButton } from "@/components/LanguagePicker";
+import { LogoMark } from "@/components/Logo";
 
 export function Masthead({
   user,
@@ -31,8 +32,17 @@ export function Masthead({
   return (
     <header className="border-b-2 border-[var(--color-ink)] bg-[var(--color-paper-2)]">
       <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 pt-2.5 pb-1.5">
-        <Link href={homeFor(user.role)} className="min-w-0 flex-1">
-          <span className="block font-display text-[21px] font-700 leading-none tracking-[0.06em]">
+        {/*
+          The mark sits beside the wordmark rather than replacing it. The wordmark is
+          translated — an Urdu reader sees اُنّتی — and swapping in a fixed Latin logo
+          here would take that away on every screen in the app to gain nothing.
+        */}
+        <Link
+          href={homeFor(user.role)}
+          className="flex min-w-0 flex-1 items-center gap-2"
+        >
+          <LogoMark size={26} className="shrink-0" />
+          <span className="block truncate font-display text-[21px] font-700 leading-none tracking-[0.06em]">
             {t("appName", lang)}
           </span>
         </Link>

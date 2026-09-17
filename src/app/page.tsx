@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { currentUser } from "@/lib/auth";
 import { LoginForm } from "@/components/LoginForm";
+import { Logo } from "@/components/Logo";
 
 // Reads live session and database state, so it must never be prerendered at build time.
 export const dynamic = "force-dynamic";
@@ -26,10 +27,8 @@ export default async function Landing() {
       */}
       <header className="border-b-2 border-[var(--color-ink)] bg-[var(--color-paper-2)]">
         <div className="mx-auto max-w-3xl px-5 py-7">
-          <div className="font-display text-[clamp(40px,13vw,66px)] font-700 leading-[0.92] tracking-[0.02em]">
-            UNNATI
-          </div>
-          <div className="mt-1 font-body text-[17px] font-500 text-[var(--color-keep)]">
+          <Logo className="w-full max-w-[420px]" />
+          <div className="mt-3 font-body text-[17px] font-500 text-[var(--color-keep)]">
             कम नुकसान, ज़्यादा मुनाफ़ा
           </div>
           <div className="text-[14px] text-[var(--color-ink-2)]">
