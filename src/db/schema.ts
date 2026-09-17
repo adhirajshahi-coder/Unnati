@@ -27,7 +27,12 @@ const createdAt = () =>
   timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 
 export const roleEnum = pgEnum("role", ["FARMER", "OPERATOR", "ADMIN"]);
-export const languageEnum = pgEnum("language", ["en", "hi"]);
+// Kept in step with LANG_CODES in lib/languages.ts — that file is the list, this is
+// the column that has to accept it. Postgres enums only grow, so a language added
+// there needs an ALTER TYPE ... ADD VALUE here rather than an edit in place.
+export const languageEnum = pgEnum("language", [
+  "en", "hi", "mr", "bn", "te", "ta", "gu", "kn", "ml", "pa", "or", "as", "ur",
+]);
 export const gradeEnum = pgEnum("grade", ["A", "B", "C"]);
 export const listingStatusEnum = pgEnum("listing_status", [
   "OPEN", // harvested, not yet assigned to a truck

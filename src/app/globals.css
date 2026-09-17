@@ -37,7 +37,24 @@
   --color-pool-soft: #f7eedb;
 
   --font-display: var(--font-plex-condensed), "Arial Narrow", sans-serif;
-  --font-body: var(--font-plex-devanagari), system-ui, sans-serif;
+
+  /*
+   * Latin and Devanagari come from Plex; the other ten scripts come from the handset.
+   *
+   * This is a decision, not an omission. Webfonts for Bengali, Telugu, Tamil, Gujarati,
+   * Kannada, Malayalam, Gurmukhi, Odia and Nastaliq would add well over a megabyte to
+   * a first load that has to happen over 2G in a field. Every Android sold in India
+   * ships Noto for all of them already, so the named fallbacks below cost nothing and
+   * render natively. The app looks slightly less uniform across languages than it
+   * would with ten more downloads, and is usable minutes sooner on the phones that
+   * actually matter here.
+   */
+  --font-body:
+    var(--font-plex-devanagari), "Noto Sans Bengali", "Noto Sans Telugu",
+    "Noto Sans Tamil", "Noto Sans Gujarati", "Noto Sans Kannada",
+    "Noto Sans Malayalam", "Noto Sans Gurmukhi", "Noto Sans Oriya",
+    "Noto Nastaliq Urdu", system-ui, sans-serif;
+
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;
 
   --radius-slip: 3px;

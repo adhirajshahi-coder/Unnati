@@ -20,7 +20,7 @@
  * free-form replies are allowed, which is what makes the WhatsApp side of the
  * assistant possible at all.
  */
-import type { Lang } from "@/lib/i18n";
+import { fallbackChain, type Lang } from "@/lib/languages";
 
 /** Notification types this app raises, mapped to the template that carries them. */
 export type TemplateKey =
@@ -39,8 +39,27 @@ export interface TemplateSpec {
   /** What each ordered {{n}} parameter holds, for whoever registers these. */
   params: string[];
   /** The body as it must be submitted, per language. */
-  body: Record<Lang, string>;
+  body: TemplateBody;
 }
+
+/**
+ * The languages a template is registered in.
+ *
+ * English and Hindi are required, because every send has to land somewhere. The other
+ * eleven are optional, and deliberately so. The app's *screens* are translated freely —
+ * a new language there costs nothing but the words. A WhatsApp template is a contract
+ * with Meta, and each language is a separate submission that Meta reviews and approves;
+ * an unapproved locale is not a slightly worse message, it is a message that does not
+ * send at all.
+ *
+ * So a language appears below only once its body has actually been registered in the
+ * WhatsApp Manager. Until then `templateLanguage` routes that farmer to Hindi, which is
+ * registered, rather than to a locale Meta would reject.
+ */
+export type TemplateBody = Partial<Record<Lang, string>> & {
+  en: string;
+  hi: string;
+};
 
 export const TEMPLATES: Record<TemplateKey, TemplateSpec> = {
   price_alert: {
@@ -131,10 +150,28 @@ export function renderTemplate(
   params: string[],
 ): string {
   const spec = TEMPLATES[key];
-  return spec.body[lang].replace(/\{\{(\d+)\}\}/g, (_, n) => {
+  const body = spec.body[templateLanguage(key, lang)] ?? spec.body.en;
+  return body.replace(/\{\{(\d+)\}\}/g, (_, n) => {
     const value = params[Number(n) - 1];
     return value ?? "";
   });
+}
+
+/**
+ * Which registered language this template will actually go out in.
+ *
+ * Walks the same fallback chain the screens use, but stops at a language whose body
+ * exists here — and by the rule above, "exists here" and "approved at Meta" mean the
+ * same thing. Both the locale sent to the API and the body written to our own log come
+ * from this one function, so the message we record can never disagree with the message
+ * Meta delivers.
+ */
+export function templateLanguage(key: TemplateKey, lang: Lang): Lang {
+  const spec = TEMPLATES[key];
+  for (const candidate of fallbackChain(lang)) {
+    if (spec.body[candidate]) return candidate;
+  }
+  return "en";
 }
 
 /** True when the parameter count matches what Meta has registered. */

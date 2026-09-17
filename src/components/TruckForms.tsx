@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Slip } from "@/components/Slip";
-import { t, type Lang } from "@/lib/i18n";
+import { prefersHindi, t, type Lang } from "@/lib/i18n";
 
 /** Register a vehicle — FR-3. */
 export function TruckForm({ lang }: { lang: Lang }) {
@@ -51,7 +51,7 @@ export function TruckForm({ lang }: { lang: Lang }) {
           placeholder="MH 15 AB 1234"
         />
         <Field
-          label={lang === "hi" ? "गाड़ी का प्रकार" : "Vehicle type"}
+          label={prefersHindi(lang) ? "गाड़ी का प्रकार" : "Vehicle type"}
           value={vehicleType}
           onChange={setVehicleType}
         />
@@ -161,7 +161,7 @@ export function NewTripForm({
     <form onSubmit={submit} className="mt-3 space-y-3 border-t-2 border-[var(--color-ink)] pt-3">
       <label className="block">
         <span className="mb-1 block text-[13px] font-500 text-[var(--color-ink-2)]">
-          {lang === "hi" ? "कहाँ जाना है" : "Going to"}
+          {prefersHindi(lang) ? "कहाँ जाना है" : "Going to"}
         </span>
         <select
           value={mandiId}
@@ -177,7 +177,7 @@ export function NewTripForm({
       </label>
 
       <Field
-        label={lang === "hi" ? "कहाँ से" : "Starting from"}
+        label={prefersHindi(lang) ? "कहाँ से" : "Starting from"}
         value={originName}
         onChange={setOriginName}
       />
@@ -185,7 +185,7 @@ export function NewTripForm({
       <label className="block">
         <span className="mb-1 block text-[13px] font-500 text-[var(--color-ink-2)]">
           {t("departs", lang)} — {hoursFromNow} h{" "}
-          {lang === "hi" ? "बाद" : "from now"}
+          {prefersHindi(lang) ? "बाद" : "from now"}
         </span>
         <input
           type="range"
@@ -222,7 +222,7 @@ export function NewTripForm({
       </div>
 
       <p className="text-center text-[12px] leading-snug text-[var(--color-ink-3)]">
-        {lang === "hi"
+        {prefersHindi(lang)
           ? "यात्रा शुरू करते ही आस-पास के किसानों को सूचना चली जाएगी।"
           : "Farmers within 35 km are alerted as soon as the trip opens."}
       </p>

@@ -23,7 +23,9 @@ export type IconName =
   | "connect"
   | "bell"
   | "ledger"
-  | "help";
+  | "help"
+  | "speak"
+  | "stop";
 
 const STROKE = 1.7;
 
@@ -140,4 +142,23 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M11 18h1.8" />
     </>
   ),
+
+  /*
+   * Read aloud: a horn speaker with two arcs of sound.
+   *
+   * The arcs are what carry it. A cone alone reads as a volume control — something you
+   * turn down — and this button does the opposite: it makes the page say itself out
+   * loud, which for a farmer who does not read is the difference between a screen and
+   * a person telling them the price.
+   */
+  speak: (
+    <>
+      <path d="M3.5 9.5h3.5L12 5.5v13L7 14.5H3.5Z" />
+      <path d="M15.5 9.2a4 4 0 0 1 0 5.6" />
+      <path d="M18.3 6.4a8 8 0 0 1 0 11.2" />
+    </>
+  ),
+
+  /* Stop: the square on a cassette deck, which is the one control everyone knows. */
+  stop: <path d="M6 6h12v12H6z" />,
 };

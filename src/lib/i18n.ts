@@ -9,12 +9,11 @@
  * price boards, weighbridge slips or UPI apps use, and mismatching them is a real
  * source of confusion in the field.
  */
-export type Lang = "en" | "hi";
+import { fallbackChain, languageMeta, type Lang } from "./languages";
+import { EXTRA } from "@/data/translations";
 
-export const LANGUAGES: Array<{ code: Lang; label: string; native: string }> = [
-  { code: "hi", label: "Hindi", native: "हिन्दी" },
-  { code: "en", label: "English", native: "English" },
-];
+export type { Lang } from "./languages";
+export { LANGUAGES, languageMeta, isLang, LANG_CODES } from "./languages";
 
 const dict = {
   /* chrome */
@@ -102,6 +101,13 @@ const dict = {
   track: { en: "Track truck", hi: "ट्रक देखें" },
   onTheWay: { en: "On the way", hi: "रास्ते में" },
   delivered: { en: "Delivered", hi: "पहुँच गया" },
+  waiting: { en: "Waiting", hi: "इंतज़ार" },
+  confirmed: { en: "Confirmed", hi: "पक्का" },
+  acceptingLoads: { en: "Accepting loads", hi: "लोड ले रहा है" },
+  truckFull: { en: "Full", hi: "भर गया" },
+  cancelled: { en: "Cancelled", hi: "रद्द" },
+  covered: { en: "covered", hi: "चल चुका" },
+  justNow: { en: "just now", hi: "अभी" },
   lastSeen: { en: "Last seen", hi: "आख़िरी बार देखा गया" },
   pickupOrder: { en: "Pickup order", hi: "उठाने का क्रम" },
 
@@ -188,6 +194,11 @@ const dict = {
   claimGroup: { en: "Take this group", hi: "यह समूह लें" },
   myGroups: { en: "My groups", hi: "मेरे समूह" },
 
+  /* read aloud */
+  listen: { en: "Listen", hi: "सुनें" },
+  stopListening: { en: "Stop", hi: "रोकें" },
+  readAloud: { en: "Read this aloud", hi: "यह सुनकर समझें" },
+
   /* help and collaboration */
   help: { en: "Help", hi: "मदद" },
   connect: { en: "Connect", hi: "जुड़ें" },
@@ -203,14 +214,82 @@ const dict = {
     en: "No mandi has a recent price for this crop nearby.",
     hi: "आस-पास किसी मंडी का इस फ़सल का ताज़ा भाव नहीं है।",
   },
-} satisfies Record<string, Record<Lang, string>>;
+} satisfies Record<string, { en: string; hi: string }>;
 
 export type MessageKey = keyof typeof dict;
 
-/** Translate. Falls back to English if a Hindi string is ever missing. */
+/**
+ * Translate.
+ *
+ * Looks in the wider translation set first, then the English/Hindi base, walking the
+ * fallback chain — requested language, then Hindi, then English. A farmer meeting an
+ * untranslated string sees Hindi rather than English, which for this audience is far
+ * more likely to be readable.
+ */
 export function t(key: MessageKey, lang: Lang): string {
-  const entry = dict[key] as Record<Lang, string>;
-  return entry[lang] ?? entry.en;
+  const base = dict[key] as { en: string; hi: string };
+  const extra = EXTRA[key];
+
+  for (const candidate of fallbackChain(lang)) {
+    const fromExtra = extra?.[candidate];
+    if (fromExtra) return fromExtra;
+
+    if (candidate === "en" || candidate === "hi") {
+      const fromBase = base[candidate];
+      if (fromBase) return fromBase;
+    }
+  }
+
+  return base.en;
+}
+
+/**
+ * Pick a string from whatever languages a call site happens to have.
+ *
+ * Most of the longer explanatory sentences in this app were written inline as an
+ * English/Hindi pair. This walks the same fallback chain over them, so a Marathi or
+ * Tamil reader gets Hindi rather than dropping to English just because the ternary had
+ * two branches.
+ */
+export function pick(
+  lang: Lang,
+  options: Partial<Record<Lang, string>> & { en: string },
+): string {
+  for (const candidate of fallbackChain(lang)) {
+    const value = options[candidate];
+    if (value) return value;
+  }
+  return options.en;
+}
+
+/**
+ * Given an English/Hindi pair, does this reader want the Hindi one?
+ *
+ * Much of this app's longer copy was written as `lang === "hi" ? हिन्दी : English`, back
+ * when those were the only two languages. Left alone, every one of those tests sends a
+ * Bengali or Tamil reader to the English branch — and a screen where the buttons are
+ * Bengali and the sentences between them are English is worse than either language
+ * alone. This is the same decision `pick` makes, in the shape those call sites already
+ * have: English for English readers, Hindi for everyone else.
+ *
+ * Derived from the fallback chain rather than written as `lang !== "en"` so the two
+ * cannot drift apart if the chain is ever reordered.
+ */
+export function prefersHindi(lang: Lang): boolean {
+  const chain = fallbackChain(lang);
+  const hi = chain.indexOf("hi");
+  const en = chain.indexOf("en");
+  return hi !== -1 && (en === -1 || hi < en);
+}
+
+/** The BCP-47 tag the browser speech engine wants for this language. */
+export function speechLocale(lang: Lang): string {
+  return languageMeta(lang).speech;
+}
+
+/** Urdu reads right to left; everything else here reads left to right. */
+export function isRtl(lang: Lang): boolean {
+  return Boolean(languageMeta(lang).rtl);
 }
 
 /** Bind a language once and translate many times: `const tr = translator(lang)`. */

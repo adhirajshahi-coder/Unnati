@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { t, type Lang } from "@/lib/i18n";
+import { prefersHindi, t, type Lang } from "@/lib/i18n";
 
 /** Accept or decline one pending load request. */
 export function LoadDecision({
@@ -111,7 +111,7 @@ export function TripControls({
       setBusy(false);
       if (res.ok) {
         setNote(
-          lang === "hi" ? "जगह भेज दी गई।" : "Location sent to the farmers.",
+          prefersHindi(lang) ? "जगह भेज दी गई।" : "Location sent to the farmers.",
         );
         router.refresh();
       } else {
@@ -154,7 +154,7 @@ export function TripControls({
               disabled={busy}
               className="flex-1 rounded-[3px] border-2 border-[var(--color-keep)] px-3 font-display text-[15px] font-700 uppercase tracking-[0.06em] text-[var(--color-keep)] disabled:opacity-60"
             >
-              {lang === "hi" ? "जगह भेजें" : "Send location"}
+              {prefersHindi(lang) ? "जगह भेजें" : "Send location"}
             </button>
             <button
               type="button"

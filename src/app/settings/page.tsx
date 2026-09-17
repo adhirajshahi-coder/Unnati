@@ -11,7 +11,8 @@ import { SlipHeading } from "@/components/Slip";
 import { WhatsappOptIn } from "@/components/WhatsappOptIn";
 import { LocationPicker } from "@/components/LocationPicker";
 import { DEFAULT_LOCATIONS } from "@/data/mandis";
-import { t } from "@/lib/i18n";
+import { LanguageList } from "@/components/LanguagePicker";
+import { prefersHindi, pick, t, type Lang } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -44,13 +45,45 @@ export default async function SettingsPage() {
     .orderBy(desc(whatsappMessages.createdAt))
     .limit(6);
 
-  const STATUS: Record<string, { en: string; hi: string }> = {
-    QUEUED: { en: "queued", hi: "कतार में" },
-    SENT: { en: "sent", hi: "भेजा गया" },
-    DELIVERED: { en: "delivered", hi: "पहुँचा" },
-    READ: { en: "read", hi: "पढ़ा गया" },
-    FAILED: { en: "failed", hi: "नहीं गया" },
-    SKIPPED: { en: "not sent", hi: "नहीं भेजा" },
+  const STATUS: Record<string, Partial<Record<Lang, string>> & { en: string }> = {
+    QUEUED: {
+      en: "queued", hi: "कतार में", mr: "रांगेत", bn: "সারিতে", te: "వరుసలో",
+      ta: "வரிசையில்", gu: "કતારમાં", kn: "ಸರತಿಯಲ್ಲಿ", ml: "ക്യൂവിൽ",
+      pa: "ਕਤਾਰ ਵਿੱਚ", or: "ଧାଡ଼ିରେ", as: "শাৰীত", ur: "قطار میں",
+    },
+    SENT: {
+      en: "sent", hi: "भेजा गया", mr: "पाठवले", bn: "পাঠানো হয়েছে", te: "పంపబడింది",
+      ta: "அனுப்பப்பட்டது", gu: "મોકલ્યું", kn: "ಕಳುಹಿಸಲಾಗಿದೆ", ml: "അയച്ചു",
+      pa: "ਭੇਜਿਆ ਗਿਆ", or: "ପଠାଯାଇଛି", as: "পঠোৱা হ'ল", ur: "بھیجا گیا",
+    },
+    DELIVERED: {
+      en: "delivered", hi: "पहुँचा", mr: "पोहोचले", bn: "পৌঁছেছে", te: "చేరింది",
+      ta: "சேர்ந்தது", gu: "પહોંચ્યું", kn: "ತಲುಪಿದೆ", ml: "എത്തി", pa: "ਪਹੁੰਚ ਗਿਆ",
+      or: "ପହଞ୍ଚିଛି", as: "পাইছেহি", ur: "پہنچ گیا",
+    },
+    READ: {
+      en: "read", hi: "पढ़ा गया", mr: "वाचले", bn: "পড়া হয়েছে", te: "చదివారు",
+      ta: "படிக்கப்பட்டது", gu: "વાંચ્યું", kn: "ಓದಲಾಗಿದೆ", ml: "വായിച്ചു",
+      pa: "ਪੜ੍ਹਿਆ ਗਿਆ", or: "ପଢ଼ାଯାଇଛି", as: "পঢ়া হ'ল", ur: "پڑھا گیا",
+    },
+    FAILED: {
+      en: "failed", hi: "नहीं गया", mr: "गेले नाही", bn: "যায়নি", te: "వెళ్ళలేదు",
+      ta: "செல்லவில்லை", gu: "ગયું નહીં", kn: "ಹೋಗಲಿಲ್ಲ", ml: "പോയില്ല",
+      pa: "ਨਹੀਂ ਗਿਆ", or: "ଯାଇନାହିଁ", as: "যোৱা নাই", ur: "نہیں گیا",
+    },
+    SKIPPED: {
+      en: "not sent", hi: "नहीं भेजा", mr: "पाठवले नाही", bn: "পাঠানো হয়নি",
+      te: "పంపలేదు", ta: "அனுப்பப்படவில்லை", gu: "મોકલ્યું નથી", kn: "ಕಳುಹಿಸಿಲ್ಲ",
+      ml: "അയച്ചില്ല", pa: "ਨਹੀਂ ਭੇਜਿਆ", or: "ପଠାଯାଇନାହିଁ", as: "পঠোৱা হোৱা নাই",
+      ur: "نہیں بھیجا",
+    },
+  };
+
+  const youSent: Partial<Record<Lang, string>> & { en: string } = {
+    en: "you sent", hi: "आपने भेजा", mr: "तुम्ही पाठवले", bn: "আপনি পাঠিয়েছেন",
+    te: "మీరు పంపారు", ta: "நீங்கள் அனுப்பினீர்கள்", gu: "તમે મોકલ્યું",
+    kn: "ನೀವು ಕಳುಹಿಸಿದ್ದೀರಿ", ml: "നിങ്ങൾ അയച്ചു", pa: "ਤੁਸੀਂ ਭੇਜਿਆ",
+    or: "ଆପଣ ପଠାଇଛନ୍ତି", as: "আপুনি পঠিয়ালে", ur: "آپ نے بھیجا",
   };
 
   return (
@@ -62,6 +95,18 @@ export default async function SettingsPage() {
         whatsappNumber={user.whatsappNumber}
         configured={whatsappConfigured()}
       />
+
+      {/*
+        The full list lives here as well as behind the masthead button. Someone setting
+        this phone up for a farmer who reads only Odia will go looking in settings, and
+        a thirteen-row list is easier to hand across than a popover.
+      */}
+      <section className="mb-5">
+        <SlipHeading>{t("language", lang)}</SlipHeading>
+        <div className="border-2 border-[var(--color-ink)] bg-[var(--color-paper-2)]">
+          <LanguageList lang={lang} />
+        </div>
+      </section>
 
       <LocationPicker
         lang={lang}
@@ -76,7 +121,7 @@ export default async function SettingsPage() {
       {recent.length > 0 && (
         <section className="mb-5">
           <SlipHeading>
-            {lang === "hi" ? "पिछले संदेश" : "Recent messages"}
+            {prefersHindi(lang) ? "पिछले संदेश" : "Recent messages"}
           </SlipHeading>
           <ul className="mt-1">
             {recent.map((m) => (
@@ -87,10 +132,10 @@ export default async function SettingsPage() {
                 <p className="text-[13.5px] leading-snug">{m.body}</p>
                 <p className="tnum mt-0.5 text-[11.5px] text-[var(--color-ink-3)]">
                   {m.direction === "INBOUND"
-                    ? lang === "hi"
-                      ? "आपने भेजा"
-                      : "you sent"
-                    : (STATUS[m.status]?.[lang] ?? m.status)}{" "}
+                    ? pick(lang, youSent)
+                    : STATUS[m.status]
+                      ? pick(lang, STATUS[m.status])
+                      : m.status}{" "}
                   ·{" "}
                   {new Date(m.createdAt).toLocaleString("en-IN", {
                     day: "numeric",

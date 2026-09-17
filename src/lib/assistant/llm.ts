@@ -19,6 +19,7 @@
  * assistant runs on keyword matching and templates, which is a real product, not a
  * broken one — it is what works on a deployment with no budget for tokens.
  */
+import { languageMeta, type Lang } from "@/lib/languages";
 import type { Intent } from "./intents";
 
 const INTENTS: Intent[] = [
@@ -145,11 +146,17 @@ function figures(s: string): string[] {
  * The result is only used if it carries exactly the same set of rupee figures as the
  * original. A model that drops, invents or alters a number has failed the one rule
  * that matters here, and its output is discarded rather than repaired.
+ *
+ * For the eleven languages the grounded answers are not yet written in, this doubles as
+ * the translation step — the engine computes in Hindi or English and the model carries
+ * it into Tamil or Odia. That is safe for the same reason the rephrase is safe: the
+ * figures are checked afterwards against the originals, so a translation that disturbs
+ * a rupee amount is thrown away and the farmer reads the Hindi.
  */
 export async function rephrase(
   answer: string,
   question: string,
-  lang: "en" | "hi",
+  lang: Lang,
 ): Promise<string | null> {
   if (!llmConfigured()) return null;
 
@@ -158,8 +165,9 @@ export async function rephrase(
 RULES, in order of importance:
 1. Never change, add or remove a number, a rupee amount, a distance, a percentage or a market name. Copy them exactly as given.
 2. Do not add any fact that is not in the text you are given. If the text does not say something, neither do you.
-3. Keep it under 60 words, in plain ${lang === "hi" ? "Hindi" : "English"}, warm and direct.
-4. Reply with the rewritten answer only.`;
+3. Keep it under 60 words, in plain ${languageMeta(lang).label}, warm and direct.
+4. Write every number in Latin digits (1234), never in the local script's numerals. Price boards and payment apps use Latin digits and the farmer will be comparing.
+5. Reply with the rewritten answer only.`;
 
   const { text } = await complete(
     system,

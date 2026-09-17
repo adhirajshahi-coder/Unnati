@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { rupees, t, weight, type Lang } from "@/lib/i18n";
+import { prefersHindi, rupees, t, weight, type Lang } from "@/lib/i18n";
 
 export interface TruckOption {
   id: string;
@@ -62,7 +62,7 @@ export function ClaimGroupButton({
   if (fits.length === 0) {
     return (
       <p className="mt-3 rounded-[3px] border border-[var(--color-rule-strong)] px-3 py-2 text-[13px] text-[var(--color-ink-2)]">
-        {lang === "hi"
+        {prefersHindi(lang)
           ? `इस समूह के लिए ${weight(committedKg, lang)} ढोने वाला ट्रक चाहिए। आपके पास उतना बड़ा ट्रक दर्ज नहीं है।`
           : `This group needs a truck carrying ${weight(committedKg, lang)}. None of your registered trucks is that big.`}
       </p>
@@ -88,7 +88,7 @@ export function ClaimGroupButton({
     <div className="mt-3 border-t-2 border-[var(--color-ink)] pt-3">
       <label className="block">
         <span className="mb-1 block text-[13px] font-500 text-[var(--color-ink-2)]">
-          {lang === "hi" ? "कौन सा ट्रक भेजेंगे" : "Which truck will carry it"}
+          {prefersHindi(lang) ? "कौन सा ट्रक भेजेंगे" : "Which truck will carry it"}
         </span>
         <select
           value={truckId}
@@ -128,7 +128,7 @@ export function ClaimGroupButton({
       </div>
 
       <p className="mt-1.5 text-center text-[11.5px] leading-snug text-[var(--color-ink-3)]">
-        {lang === "hi"
+        {prefersHindi(lang)
           ? "हर किसान का लोड पक्का हो जाएगा और खर्च वज़न के हिसाब से बँट जाएगा।"
           : "Every farmer's load is confirmed and the cost splits by weight, as on any other trip."}
       </p>

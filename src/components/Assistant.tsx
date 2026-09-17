@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Slip } from "@/components/Slip";
-import { t, type Lang } from "@/lib/i18n";
+import { SpeakButton } from "@/components/SpeakButton";
+import { prefersHindi, t, type Lang } from "@/lib/i18n";
 
 interface Reply {
   text: string;
@@ -17,6 +18,15 @@ interface Turn {
   from: "farmer" | "unnati";
   text: string;
   reply?: Reply;
+}
+
+/** The answer and its figures as one passage, so the listener hears the whole reply. */
+function spokenReply(turn: Turn): string {
+  const parts = [turn.text];
+  for (const fact of turn.reply?.facts ?? []) {
+    parts.push(`${fact.label}: ${fact.value}.`);
+  }
+  return parts.join(" ");
 }
 
 /**
@@ -71,7 +81,7 @@ export function Assistant({
               from: "unnati",
               text:
                 data.error ??
-                (lang === "hi"
+                (prefersHindi(lang)
                   ? "अभी जवाब नहीं दे पाया। थोड़ी देर में फिर पूछें।"
                   : "I could not answer that just now. Try again shortly."),
             },
@@ -82,7 +92,7 @@ export function Assistant({
         {
           from: "unnati",
           text:
-            lang === "hi"
+            prefersHindi(lang)
               ? "नेटवर्क नहीं मिला। दोबारा कोशिश करें।"
               : "No network. Try again.",
         },
@@ -101,12 +111,12 @@ export function Assistant({
         {turns.length === 0 && (
           <Slip>
             <p className="text-[15px] leading-relaxed">
-              {lang === "hi"
+              {prefersHindi(lang)
                 ? "भाव, कहाँ बेचना है, ट्रक साझा करना, आपका हिसाब या फ़सल की देखभाल — जो पूछना हो हिंदी या अंग्रेज़ी में पूछिए।"
                 : "Ask about prices, where to sell, sharing a truck, your ledger, or how to handle a crop — in Hindi or English, whichever is easier."}
             </p>
             <p className="mt-2 text-[12.5px] leading-snug text-[var(--color-ink-3)]">
-              {lang === "hi"
+              {prefersHindi(lang)
                 ? "हर आँकड़ा ऐप के अपने हिसाब से आता है — अंदाज़े से कोई भाव नहीं बताया जाता।"
                 : "Every figure comes from the app's own data. Nothing here is estimated in prose."}
             </p>
@@ -123,7 +133,23 @@ export function Assistant({
           ) : (
             <div key={i}>
               <Slip>
-                <p className="text-[15px] leading-relaxed">{turn.text}</p>
+                <div className="flex items-start gap-2">
+                  <p className="min-w-0 flex-1 text-[15px] leading-relaxed">
+                    {turn.text}
+                  </p>
+                  {/*
+                    An answer is the one place in the app where the farmer asked a
+                    question in their own words, so it is the place they are most
+                    likely to want spoken back. The facts below are read too — they
+                    carry the figure the answer is about.
+                  */}
+                  <SpeakButton
+                    lang={lang}
+                    text={spokenReply(turn)}
+                    size="sm"
+                    label={null}
+                  />
+                </div>
 
                 {turn.reply?.facts && turn.reply.facts.length > 0 && (
                   <ul className="mt-2 border-t border-dotted border-[var(--color-rule)] pt-1">
@@ -158,7 +184,7 @@ export function Assistant({
 
         {busy && (
           <p className="text-[14px] text-[var(--color-ink-3)]">
-            {lang === "hi" ? "देख रहा हूँ…" : "Looking that up…"}
+            {prefersHindi(lang) ? "देख रहा हूँ…" : "Looking that up…"}
           </p>
         )}
 
@@ -192,7 +218,7 @@ export function Assistant({
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder={
-            lang === "hi" ? "अपना सवाल लिखें…" : "Type your question…"
+            prefersHindi(lang) ? "अपना सवाल लिखें…" : "Type your question…"
           }
           className="min-w-0 flex-1 rounded-[3px] border border-[var(--color-rule-strong)] bg-[var(--color-paper-2)] px-3 text-[16px] outline-none focus:border-[var(--color-keep)]"
         />

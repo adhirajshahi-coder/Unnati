@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { t, type Lang } from "@/lib/i18n";
+import { prefersHindi, t, type Lang } from "@/lib/i18n";
 
 export interface LocationOption {
   id: string;
@@ -65,7 +65,7 @@ export function LocationPicker({
   function useGps() {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       setError(
-        lang === "hi"
+        prefersHindi(lang)
           ? "इस फ़ोन से जगह नहीं ली जा सकी।"
           : "This device cannot share its location.",
       );
@@ -78,7 +78,7 @@ export function LocationPicker({
       () => {
         setBusy(false);
         setError(
-          lang === "hi"
+          prefersHindi(lang)
             ? "जगह नहीं मिल सकी। नीचे से चुन लें।"
             : "Could not read your location. Pick from the list instead.",
         );
@@ -95,7 +95,7 @@ export function LocationPicker({
             {t("myLocation", lang)}
           </span>
           <span className="block truncate text-[15px]">
-            {here || (lang === "hi" ? "तय नहीं" : "Not set")}
+            {here || (prefersHindi(lang) ? "तय नहीं" : "Not set")}
           </span>
         </span>
         <button
@@ -117,7 +117,7 @@ export function LocationPicker({
           >
             {busy
               ? "…"
-              : lang === "hi"
+              : prefersHindi(lang)
                 ? "मेरी मौजूदा जगह लें"
                 : "Use my current location"}
           </button>
@@ -139,7 +139,7 @@ export function LocationPicker({
                 }
                 className="w-full rounded-[3px] border border-[var(--color-rule)] bg-[var(--color-paper)] px-3 py-2 text-left text-[14px] disabled:opacity-60"
               >
-                {lang === "hi" ? o.labelHi : o.label}
+                {prefersHindi(lang) ? o.labelHi : o.label}
               </button>
             ))}
           </div>
@@ -151,7 +151,7 @@ export function LocationPicker({
           )}
 
           <p className="mt-2 text-[11.5px] leading-snug text-[var(--color-ink-3)]">
-            {lang === "hi"
+            {prefersHindi(lang)
               ? "आपकी जगह सिर्फ़ नज़दीकी मंडी और ढुलाई का हिसाब लगाने के काम आती है।"
               : "Your location is used only to find nearby mandis and work out transport cost."}
           </p>

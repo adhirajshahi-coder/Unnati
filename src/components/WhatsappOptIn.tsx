@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Slip, SlipHeading } from "@/components/Slip";
-import { type Lang } from "@/lib/i18n";
+import { prefersHindi, type Lang } from "@/lib/i18n";
 
 /**
  * Turning WhatsApp alerts on.
@@ -69,29 +69,29 @@ export function WhatsappOptIn({
         right={
           on ? (
             <span className="text-[var(--color-keep)]">
-              {lang === "hi" ? "चालू" : "On"}
+              {prefersHindi(lang) ? "चालू" : "On"}
             </span>
           ) : undefined
         }
       >
-        {lang === "hi" ? "व्हाट्सएप पर सूचनाएँ" : "Alerts on WhatsApp"}
+        {prefersHindi(lang) ? "व्हाट्सएप पर सूचनाएँ" : "Alerts on WhatsApp"}
       </SlipHeading>
 
       <p className="pt-2 text-[15px] leading-relaxed">
-        {lang === "hi"
+        {prefersHindi(lang)
           ? "मंडी भाव, आस-पास ट्रक साझा करने की ख़बर, और भुगतान की याद — सब सीधे व्हाट्सएप पर। ऐप खोलने की ज़रूरत नहीं, कमज़ोर नेटवर्क में भी पहुँच जाएगा।"
           : "Mandi prices, truck-sharing alerts near you, and payment reminders — sent straight to WhatsApp. No need to open the app, and they get through on a weak connection."}
       </p>
 
       <p className="tnum mt-2 text-[13px] text-[var(--color-ink-2)]">
-        {lang === "hi" ? "नंबर" : "Number"}: {showing}
+        {prefersHindi(lang) ? "नंबर" : "Number"}: {showing}
         {!editing && (
           <button
             type="button"
             onClick={() => setEditing(true)}
             className="ml-2 min-h-0 underline decoration-dotted underline-offset-2 text-[var(--color-keep)]"
           >
-            {lang === "hi" ? "बदलें" : "Change"}
+            {prefersHindi(lang) ? "बदलें" : "Change"}
           </button>
         )}
       </p>
@@ -111,7 +111,7 @@ export function WhatsappOptIn({
             disabled={busy}
             className="shrink-0 rounded-[3px] border-2 border-[var(--color-keep)] px-4 text-[14px] font-600 text-[var(--color-keep)] disabled:opacity-60"
           >
-            {lang === "hi" ? "सहेजें" : "Save"}
+            {prefersHindi(lang) ? "सहेजें" : "Save"}
           </button>
         </div>
       )}
@@ -135,23 +135,23 @@ export function WhatsappOptIn({
         {busy
           ? "…"
           : on
-            ? lang === "hi"
+            ? prefersHindi(lang)
               ? "सूचनाएँ बंद करें"
               : "Turn alerts off"
-            : lang === "hi"
+            : prefersHindi(lang)
               ? "व्हाट्सएप पर सूचनाएँ चालू करें"
               : "Send my alerts to WhatsApp"}
       </button>
 
       <p className="mt-2 text-[11.5px] leading-snug text-[var(--color-ink-3)]">
-        {lang === "hi"
+        {prefersHindi(lang)
           ? "व्हाट्सएप पर कभी भी STOP लिखकर बंद कर सकते हैं। आपका नंबर सिर्फ़ इन्हीं सूचनाओं के लिए इस्तेमाल होता है।"
           : "Reply STOP on WhatsApp any time to turn these off. Your number is used for these alerts and nothing else."}
       </p>
 
       {!configured && (
         <p className="mt-2 rounded-[3px] border border-[var(--color-pool)] bg-[var(--color-pool-soft)] px-3 py-2 text-[12px] leading-snug text-[var(--color-pool)]">
-          {lang === "hi"
+          {prefersHindi(lang)
             ? "इस सर्वर पर व्हाट्सएप अभी जुड़ा नहीं है। आपकी पसंद सहेज ली जाएगी और जोड़ते ही सूचनाएँ जाने लगेंगी।"
             : "WhatsApp is not connected on this deployment yet. Your choice is saved, and alerts start flowing the moment it is."}
         </p>

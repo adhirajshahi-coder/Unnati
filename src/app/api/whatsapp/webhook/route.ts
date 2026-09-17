@@ -10,6 +10,7 @@ import {
 } from "@/lib/whatsapp";
 import { toWaId } from "@/lib/whatsapp/client";
 import { ask } from "@/lib/assistant";
+import { prefersHindi } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -145,7 +146,7 @@ async function handleInbound(message: {
     await reply(
       known.userId,
       from,
-      known.language === "hi"
+      prefersHindi(known.language)
         ? "उन्नति: व्हाट्सएप सूचनाएँ बंद कर दी गईं। दोबारा चालू करने के लिए START लिखें।"
         : "UNNATI: WhatsApp alerts are off. Send START to turn them back on.",
     );
@@ -157,7 +158,7 @@ async function handleInbound(message: {
     await reply(
       known.userId,
       from,
-      known.language === "hi"
+      prefersHindi(known.language)
         ? "उन्नति: सूचनाएँ फिर से चालू हैं।"
         : "UNNATI: alerts are on again.",
     );

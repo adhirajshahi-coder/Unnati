@@ -18,7 +18,7 @@ import { roadDistanceKm } from "@/lib/engine/geo";
 import { Page } from "@/components/Shell";
 import { Slip, SlipHeading, Line } from "@/components/Slip";
 import { RouteMap } from "@/components/RouteMap";
-import { rupees, t, weight } from "@/lib/i18n";
+import { prefersHindi, rupees, t, weight, type Lang, type MessageKey } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -114,7 +114,7 @@ export default async function TripPage({
         id: l.id,
         pickupLat: l.pickupLat,
         pickupLng: l.pickupLng,
-        cropName: lang === "hi" ? l.cropNameHi : l.cropName,
+        cropName: prefersHindi(lang) ? l.cropNameHi : l.cropName,
       })),
     {
       origin: { lat: trip.originLat, lng: trip.originLng },
@@ -149,7 +149,7 @@ export default async function TripPage({
               {trip.originName} →
             </div>
             <h1 className="text-[26px] leading-tight">
-              {lang === "hi" ? trip.mandiNameHi : trip.mandiName}
+              {prefersHindi(lang) ? trip.mandiNameHi : trip.mandiName}
             </h1>
             <div className="tnum text-[12.5px] text-[var(--color-ink-3)]">
               {trip.vehicleType} · {trip.regNo}
@@ -163,7 +163,7 @@ export default async function TripPage({
           destination={{
             lat: trip.mandiLat,
             lng: trip.mandiLng,
-            label: lang === "hi" ? trip.mandiNameHi : trip.mandiName,
+            label: prefersHindi(lang) ? trip.mandiNameHi : trip.mandiName,
           }}
           stops={allLoads
             .filter((l) => l.status !== "REQUESTED")
@@ -195,7 +195,7 @@ export default async function TripPage({
           {lastPing && (
             <Line
               label={t("lastSeen", lang)}
-              sub={`${Math.round(travelled)} km ${lang === "hi" ? "चल चुका" : "covered"}`}
+              sub={`${Math.round(travelled)} km ${t("covered", lang)}`}
               value={timeAgo(new Date(lastPing.at), lang)}
             />
           )}
@@ -226,7 +226,7 @@ export default async function TripPage({
               */}
               <span className="tnum text-[22px] font-600 text-[var(--color-keep)]">
                 {mine.status === "REQUESTED"
-                  ? lang === "hi"
+                  ? prefersHindi(lang)
                     ? "मंज़ूरी बाकी"
                     : "awaiting approval"
                   : rupees(mine.costShare)}
@@ -234,7 +234,7 @@ export default async function TripPage({
             </div>
             {mine.detourKm > 0 && (
               <p className="tnum mt-1 text-[12px] text-[var(--color-ink-2)]">
-                {lang === "hi"
+                {prefersHindi(lang)
                   ? `इसमें आपके लिए ${mine.detourKm} किमी अतिरिक्त चक्कर का खर्च शामिल है।`
                   : `Includes the ${mine.detourKm} km detour made to collect from you.`}
               </p>
@@ -244,7 +244,7 @@ export default async function TripPage({
       </Slip>
 
       <section className="mb-5">
-        <SlipHeading right={`${rupees(trip.totalCost)} ${lang === "hi" ? "कुल" : "total"}`}>
+        <SlipHeading right={`${rupees(trip.totalCost)} ${prefersHindi(lang) ? "कुल" : "total"}`}>
           {t("costSplit", lang)}
         </SlipHeading>
         <ul className="mt-1">
@@ -260,18 +260,18 @@ export default async function TripPage({
                   {l.farmerName}
                   {l.farmerId === user.id && (
                     <span className="ml-1 text-[12px] text-[var(--color-keep)]">
-                      ({lang === "hi" ? "आप" : "you"})
+                      ({prefersHindi(lang) ? "आप" : "you"})
                     </span>
                   )}
                 </span>
                 <span className="tnum block text-[12px] text-[var(--color-ink-3)]">
-                  {lang === "hi" ? l.cropNameHi : l.cropName} ·{" "}
+                  {prefersHindi(lang) ? l.cropNameHi : l.cropName} ·{" "}
                   {weight(l.quantityKg, lang)} · {l.pickupName}
                 </span>
               </span>
               <span className="tnum shrink-0 text-[15px]">
                 {l.status === "REQUESTED"
-                  ? lang === "hi"
+                  ? prefersHindi(lang)
                     ? "इंतज़ार"
                     : "pending"
                   : rupees(l.costShare)}
@@ -304,7 +304,7 @@ export default async function TripPage({
             })}
           </ol>
           <p className="mt-2 text-[12px] leading-snug text-[var(--color-ink-3)]">
-            {lang === "hi"
+            {prefersHindi(lang)
               ? "पहले उठाई गई उपज सबसे अंदर जाती है। अपनी उपज इस समय तक तैयार रखें।"
               : "Produce collected first is loaded deepest. Have yours ready when the truck reaches you."}
           </p>
@@ -321,13 +321,13 @@ export default async function TripPage({
   );
 }
 
-function TripStatus({ status, lang }: { status: string; lang: "en" | "hi" }) {
-  const map: Record<string, { en: string; hi: string; tone: string }> = {
-    OPEN: { en: "Accepting loads", hi: "लोड ले रहा है", tone: "pool" },
-    FULL: { en: "Full", hi: "भर गया", tone: "pool" },
-    IN_TRANSIT: { en: "On the way", hi: "रास्ते में", tone: "keep" },
-    DELIVERED: { en: "Delivered", hi: "पहुँच गया", tone: "keep" },
-    CANCELLED: { en: "Cancelled", hi: "रद्द", tone: "lose" },
+function TripStatus({ status, lang }: { status: string; lang: Lang }) {
+  const map: Record<string, { key: MessageKey; tone: string }> = {
+    OPEN: { key: "acceptingLoads", tone: "pool" },
+    FULL: { key: "truckFull", tone: "pool" },
+    IN_TRANSIT: { key: "onTheWay", tone: "keep" },
+    DELIVERED: { key: "delivered", tone: "keep" },
+    CANCELLED: { key: "cancelled", tone: "lose" },
   };
   const s = map[status] ?? map.OPEN;
   const tone = {
@@ -340,16 +340,16 @@ function TripStatus({ status, lang }: { status: string; lang: "en" | "hi" }) {
     <span
       className={`shrink-0 rounded-[3px] border px-2 py-1 text-[12.5px] font-600 ${tone}`}
     >
-      {s[lang]}
+      {t(s.key, lang)}
     </span>
   );
 }
 
-function timeAgo(d: Date, lang: "en" | "hi") {
+function timeAgo(d: Date, lang: Lang) {
   const mins = Math.round((Date.now() - d.getTime()) / 60000);
-  if (mins < 1) return lang === "hi" ? "अभी" : "just now";
-  if (mins < 60) return `${mins} ${lang === "hi" ? "मिनट पहले" : "min ago"}`;
+  if (mins < 1) return t("justNow", lang);
+  if (mins < 60) return `${mins} ${prefersHindi(lang) ? "मिनट पहले" : "min ago"}`;
   const h = Math.round(mins / 60);
-  if (h < 24) return `${h} ${lang === "hi" ? "घंटे पहले" : "h ago"}`;
-  return `${Math.round(h / 24)} ${lang === "hi" ? "दिन पहले" : "d ago"}`;
+  if (h < 24) return `${h} ${prefersHindi(lang) ? "घंटे पहले" : "h ago"}`;
+  return `${Math.round(h / 24)} ${prefersHindi(lang) ? "दिन पहले" : "d ago"}`;
 }

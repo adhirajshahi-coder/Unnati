@@ -9,6 +9,8 @@
  * Coordinates are projected into the diagram's own box, so the shape of the route is
  * real even though the scale is not.
  */
+import { prefersHindi, type Lang } from "@/lib/i18n";
+
 interface Pt {
   lat: number;
   lng: number;
@@ -27,7 +29,7 @@ export function RouteMap({
   stops: Array<Pt & { label: string; mine: boolean }>;
   current: Pt | null;
   progress: number;
-  lang?: "en" | "hi";
+  lang?: Lang;
 }) {
   const all = [origin, destination, ...stops, ...(current ? [current] : [])];
 
@@ -155,7 +157,7 @@ export function RouteMap({
       </svg>
 
       <figcaption className="tnum mt-1 text-center text-[12px] text-[var(--color-ink-3)]">
-        {lang === "hi"
+        {prefersHindi(lang)
           ? `रास्ता ${progress}% पूरा`
           : `${progress}% of the way`}
       </figcaption>

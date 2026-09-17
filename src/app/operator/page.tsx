@@ -10,7 +10,7 @@ import { Slip, SlipHeading } from "@/components/Slip";
 import { ClaimGroupButton } from "@/components/ClaimGroupButton";
 import { poolsAwaitingTruck } from "@/lib/pools";
 import { tripCost } from "@/lib/engine/costs";
-import { rupees, t, weight } from "@/lib/i18n";
+import { prefersHindi, rupees, t, weight } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -121,7 +121,7 @@ export default async function OperatorHome() {
                   >
                     <div className="flex items-baseline justify-between gap-2">
                       <h3 className="text-[18px]">
-                        {lang === "hi" ? g.mandiNameHi : g.mandiName}
+                        {prefersHindi(lang) ? g.mandiNameHi : g.mandiName}
                       </h3>
                       <span className="tnum shrink-0 text-[13px] font-600 text-[var(--color-pool)]">
                         {weight(g.committedKg, lang)}
@@ -129,7 +129,7 @@ export default async function OperatorHome() {
                     </div>
 
                     <p className="tnum text-[12.5px] text-[var(--color-ink-3)]">
-                      {g.memberCount} {lang === "hi" ? "किसान" : "farmers"} ·{" "}
+                      {g.memberCount} {prefersHindi(lang) ? "किसान" : "farmers"} ·{" "}
                       {g.originName} → {Math.round(g.distanceKm)} km ·{" "}
                       {new Date(g.targetDepartAt).toLocaleString("en-IN", {
                         day: "numeric",
@@ -164,7 +164,7 @@ export default async function OperatorHome() {
             {t("pendingRequests", lang)}
           </div>
           <p className="mt-0.5 text-[15px]">
-            {lang === "hi"
+            {prefersHindi(lang)
               ? `${totalPending} किसान आपके ट्रक में जगह माँग रहे हैं।`
               : `${totalPending} farmers are asking for space on your trucks.`}
           </p>
@@ -173,11 +173,11 @@ export default async function OperatorHome() {
 
       <div className="mb-6 grid grid-cols-3 gap-2">
         <Stat
-          label={lang === "hi" ? "ट्रक" : "Trucks"}
+          label={prefersHindi(lang) ? "ट्रक" : "Trucks"}
           value={String(myTrucks.length)}
         />
         <Stat
-          label={lang === "hi" ? "चालू यात्राएँ" : "Active trips"}
+          label={prefersHindi(lang) ? "चालू यात्राएँ" : "Active trips"}
           value={String(active.length)}
         />
         <Stat
@@ -198,7 +198,7 @@ export default async function OperatorHome() {
               {t("openTrip", lang)}
             </span>
             <span className="block text-[13px] opacity-85">
-              {lang === "hi"
+              {prefersHindi(lang)
                 ? "आस-पास के किसानों को सूचना चली जाएगी"
                 : "Nearby farmers are told automatically"}
             </span>
@@ -211,7 +211,7 @@ export default async function OperatorHome() {
 
       <section className="mb-6">
         <SlipHeading right={`${active.length}`}>
-          {lang === "hi" ? "चालू यात्राएँ" : "Active trips"}
+          {prefersHindi(lang) ? "चालू यात्राएँ" : "Active trips"}
         </SlipHeading>
 
         {active.length === 0 ? (
@@ -233,11 +233,11 @@ export default async function OperatorHome() {
                     >
                       <div className="flex items-baseline justify-between gap-2">
                         <h3 className="text-[19px]">
-                          {lang === "hi" ? trip.mandiNameHi : trip.mandiName}
+                          {prefersHindi(lang) ? trip.mandiNameHi : trip.mandiName}
                         </h3>
                         {pending > 0 && (
                           <span className="tnum shrink-0 rounded-[3px] bg-[var(--color-pool)] px-2 py-0.5 text-[12px] font-600 text-[var(--color-paper-2)]">
-                            {pending} {lang === "hi" ? "नए" : "new"}
+                            {pending} {prefersHindi(lang) ? "नए" : "new"}
                           </span>
                         )}
                       </div>
@@ -290,7 +290,7 @@ export default async function OperatorHome() {
       {past.length > 0 && (
         <section>
           <SlipHeading right={`${past.length}`}>
-            {lang === "hi" ? "पिछली यात्राएँ" : "Past trips"}
+            {prefersHindi(lang) ? "पिछली यात्राएँ" : "Past trips"}
           </SlipHeading>
           <ul className="mt-1">
             {past.slice(0, 10).map((trip) => (
@@ -300,7 +300,7 @@ export default async function OperatorHome() {
               >
                 <span className="min-w-0">
                   <span className="block truncate text-[15px]">
-                    {lang === "hi" ? trip.mandiNameHi : trip.mandiName}
+                    {prefersHindi(lang) ? trip.mandiNameHi : trip.mandiName}
                   </span>
                   <span className="tnum block text-[12px] text-[var(--color-ink-3)]">
                     {trip.regNo} ·{" "}

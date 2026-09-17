@@ -25,7 +25,7 @@ import {
   TEMPLATE_FOR,
   renderTemplate,
   paramsValid,
-
+  templateLanguage,
 } from "./templates";
 import {
   sendTemplate,
@@ -148,7 +148,7 @@ export async function dispatchWhatsapp(
       ? await sendTemplate({
           to: waId,
           templateName: TEMPLATES[key].name,
-          languageCode: waLanguageCode(lang),
+          languageCode: waLanguageCode(templateLanguage(key, lang)),
           params: input.params,
         })
       : await sendText({ to: waId, body });

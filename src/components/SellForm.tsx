@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Slip, SlipHeading } from "@/components/Slip";
 import { CropPicker, type CropOption } from "@/components/CropPicker";
-import { t, weight, type Lang } from "@/lib/i18n";
+import { prefersHindi, t, weight, type Lang } from "@/lib/i18n";
 
 /**
  * Harvest entry.
@@ -72,7 +72,7 @@ export function SellForm({
       >
         <span className="min-w-0">
           <span className="block truncate text-[15px] font-500">
-            {selected ? (lang === "hi" ? selected.nameHi : selected.name) : ""} ·{" "}
+            {selected ? (prefersHindi(lang) ? selected.nameHi : selected.name) : ""} ·{" "}
             {weight(Math.round(Number(quintals) * 100), lang)}
           </span>
           <span className="tnum block truncate text-[12px] text-[var(--color-ink-3)]">
@@ -80,7 +80,7 @@ export function SellForm({
           </span>
         </span>
         <span className="shrink-0 font-display text-[13px] font-700 uppercase tracking-[0.08em] text-[var(--color-keep)]">
-          {lang === "hi" ? "बदलें" : "Change"}
+          {prefersHindi(lang) ? "बदलें" : "Change"}
         </span>
       </button>
     );

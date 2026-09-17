@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Slip, SlipHeading } from "@/components/Slip";
-import { rupees, t, weight, type Lang } from "@/lib/i18n";
+import { prefersHindi, rupees, t, weight, type Lang } from "@/lib/i18n";
 import type { SharedOffer } from "@/components/Recommendations";
 
 /**
@@ -59,7 +59,7 @@ export function TransportChoice({
       <Slip lifted>
         <SlipHeading>{t("sharedTruck", lang)}</SlipHeading>
         <p className="pt-2 text-[15px] leading-relaxed">
-          {lang === "hi"
+          {prefersHindi(lang)
             ? `${mandiName} के लिए एक ट्रक पहले से जा रहा है और उसमें जगह है।`
             : `A truck is already running to ${mandiName} and has room for your load.`}
         </p>
@@ -110,7 +110,7 @@ export function TransportChoice({
   return (
     <Slip lifted>
       <SlipHeading right={`${distanceKm} km`}>
-        {lang === "hi" ? "ढुलाई कैसे करें" : "How to get it there"}
+        {prefersHindi(lang) ? "ढुलाई कैसे करें" : "How to get it there"}
       </SlipHeading>
 
       <div className="mt-2 space-y-3">
@@ -124,10 +124,10 @@ export function TransportChoice({
               </div>
               <div className="text-[14px] leading-snug text-[var(--color-ink-2)]">
                 {joiningExisting
-                  ? lang === "hi"
+                  ? prefersHindi(lang)
                     ? `${shared.memberCount} किसान पहले से जुड़े हैं — ${weight(shared.committedKg, lang)} तैयार`
                     : `${shared.memberCount} farmers already in — ${weight(shared.committedKg, lang)} gathered`
-                  : lang === "hi"
+                  : prefersHindi(lang)
                     ? `${shared.vehicle} में पड़ोसियों के साथ जगह बाँटें`
                     : `Split a ${shared.vehicle} with neighbours going the same way`}
               </div>
@@ -150,10 +150,10 @@ export function TransportChoice({
               value={rupees(shared.cost)}
               sub={
                 joiningExisting
-                  ? lang === "hi"
+                  ? prefersHindi(lang)
                     ? "अभी जितने किसान जुड़े हैं"
                     : "at the group's current size"
-                  : lang === "hi"
+                  : prefersHindi(lang)
                     ? `${weight(shared.targetKg, lang)} के समूह पर`
                     : `assuming a ${weight(shared.targetKg, lang)} group`
               }
@@ -197,7 +197,7 @@ export function TransportChoice({
                 {t("fullTruckOption", lang)}
               </div>
               <div className="text-[13.5px] leading-snug text-[var(--color-ink-2)]">
-                {lang === "hi"
+                {prefersHindi(lang)
                   ? "तुरंत निकल सकते हैं, किसी का इंतज़ार नहीं"
                   : "Leave when you like, no waiting for anyone"}
               </div>

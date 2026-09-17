@@ -7,7 +7,7 @@ import { unreadCount, BILLING_NOTICE_DAYS } from "@/lib/notifications";
 import { Page } from "@/components/Shell";
 import { Slip, SlipHeading, Line, Stamp } from "@/components/Slip";
 import { PayButton } from "@/components/PayButton";
-import { rupees, t, weight } from "@/lib/i18n";
+import { prefersHindi, rupees, t, weight } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -71,13 +71,13 @@ export default async function EarningsPage() {
     <Page user={user} lang={lang} active="earnings" unread={unread}>
       <Slip lifted className="mb-5">
         <SlipHeading>
-          {lang === "hi" ? "अब तक की कमाई" : "Income so far"}
+          {prefersHindi(lang) ? "अब तक की कमाई" : "Income so far"}
         </SlipHeading>
 
         <div className="border-t-2 border-[var(--color-ink)] pt-1">
           <Line
             index={0}
-            label={lang === "hi" ? "मंडी से मिला" : "Received from mandis"}
+            label={prefersHindi(lang) ? "मंडी से मिला" : "Received from mandis"}
             value={rupees(grossTotal)}
             strong
           />
@@ -91,14 +91,14 @@ export default async function EarningsPage() {
 
         <div className="mt-4">
           <Stamp
-            label={lang === "hi" ? "आपके पास बचा" : "Kept"}
+            label={prefersHindi(lang) ? "आपके पास बचा" : "Kept"}
             value={rupees(netTotal)}
           />
         </div>
 
         {grossTotal > 0 && (
           <p className="mt-3 text-[13px] leading-snug text-[var(--color-ink-2)]">
-            {lang === "hi"
+            {prefersHindi(lang)
               ? `ढुलाई आपकी कुल बिक्री का ${Math.round((transportTotal / grossTotal) * 100)}% रही। ट्रक साझा करने से यह हिस्सा घटता है।`
               : `Transport took ${Math.round((transportTotal / grossTotal) * 100)}% of your sales. Sharing a truck is what brings that share down.`}
           </p>
@@ -130,13 +130,13 @@ export default async function EarningsPage() {
                               : "text-[var(--color-ink-3)]"
                           }`}
                         >
-                          {lang === "hi" ? "देय" : "Due"}{" "}
+                          {prefersHindi(lang) ? "देय" : "Due"}{" "}
                           {new Date(d.dueDate).toLocaleDateString("en-IN", {
                             day: "numeric",
                             month: "short",
                           })}
                           {daysLeft !== null &&
-                            ` · ${daysLeft} ${lang === "hi" ? "दिन बाकी" : "days left"}`}
+                            ` · ${daysLeft} ${prefersHindi(lang) ? "दिन बाकी" : "days left"}`}
                         </span>
                       )}
                     </span>
@@ -147,7 +147,7 @@ export default async function EarningsPage() {
 
                   {warned && (
                     <p className="mt-2 rounded-[3px] bg-[var(--color-lose-soft)] px-2 py-1.5 text-[12.5px] text-[var(--color-lose)]">
-                      {lang === "hi"
+                      {prefersHindi(lang)
                         ? "आपको 7 दिन पहले SMS भेजा जा चुका है।"
                         : "You were sent an SMS reminder seven days before this date."}
                     </p>
@@ -163,12 +163,12 @@ export default async function EarningsPage() {
 
       <section>
         <SlipHeading right={`${mine.length}`}>
-          {lang === "hi" ? "पिछली बिक्री" : "Past sales"}
+          {prefersHindi(lang) ? "पिछली बिक्री" : "Past sales"}
         </SlipHeading>
 
         {mine.length === 0 ? (
           <p className="py-8 text-center text-[15px] text-[var(--color-ink-3)]">
-            {lang === "hi" ? "अभी कोई बिक्री नहीं।" : "No completed sales yet."}
+            {prefersHindi(lang) ? "अभी कोई बिक्री नहीं।" : "No completed sales yet."}
           </p>
         ) : (
           <ul className="mt-1">
@@ -184,11 +184,11 @@ export default async function EarningsPage() {
                   <div className="flex items-baseline justify-between gap-3">
                     <span className="min-w-0">
                       <span className="block truncate text-[15px]">
-                        {lang === "hi" ? m.cropNameHi : m.cropName} ·{" "}
+                        {prefersHindi(lang) ? m.cropNameHi : m.cropName} ·{" "}
                         {weight(m.quantityKg, lang)}
                       </span>
                       <span className="tnum block text-[12.5px] text-[var(--color-ink-3)]">
-                        {lang === "hi" ? m.mandiNameHi : m.mandiName} ·{" "}
+                        {prefersHindi(lang) ? m.mandiNameHi : m.mandiName} ·{" "}
                         {new Date(m.departAt).toLocaleDateString("en-IN", {
                           day: "numeric",
                           month: "short",

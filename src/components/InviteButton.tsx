@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Lang } from "@/lib/i18n";
+import { prefersHindi, type Lang } from "@/lib/i18n";
 
 /**
  * Invite a neighbour into your group.
@@ -40,7 +40,7 @@ export function InviteButton({
   if (state === "sent") {
     return (
       <p className="mt-2 rounded-[3px] bg-[var(--color-keep-soft)] px-3 py-2 text-[13.5px] text-[var(--color-keep)]">
-        {lang === "hi"
+        {prefersHindi(lang)
           ? `${farmerName} को न्योता भेज दिया। वे चाहें तो समूह में जुड़ सकते हैं।`
           : `Invitation sent to ${farmerName}. They can join if it suits them.`}
       </p>
@@ -57,14 +57,14 @@ export function InviteButton({
       >
         {state === "busy"
           ? "…"
-          : lang === "hi"
+          : prefersHindi(lang)
             ? `${mandiName} वाले समूह में बुलाएँ`
             : `Invite to the ${mandiName} group`}
       </button>
 
       {state === "error" && (
         <p role="alert" className="mt-1 text-[13px] text-[var(--color-lose)]">
-          {lang === "hi"
+          {prefersHindi(lang)
             ? "न्योता नहीं भेजा जा सका।"
             : "Could not send that invitation."}
         </p>

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { t, type Lang } from "@/lib/i18n";
+import { prefersHindi, pick, t, type Lang } from "@/lib/i18n";
 
 export interface CropOption {
   id: string;
@@ -13,12 +13,41 @@ export interface CropOption {
   isCustom?: boolean;
 }
 
-const CATEGORY_LABEL: Record<string, { en: string; hi: string }> = {
-  VEGETABLE: { en: "Vegetables", hi: "सब्ज़ियाँ" },
-  FRUIT: { en: "Fruits", hi: "फल" },
-  GRAIN: { en: "Grains", hi: "अनाज" },
-  PULSE: { en: "Pulses", hi: "दालें" },
-  OILSEED: { en: "Oilseeds", hi: "तिलहन" },
+/**
+ * The five headings the crop list groups under.
+ *
+ * Worth translating everywhere, unlike most inline copy: these are the words a farmer
+ * scans to find their own crop among thirty-five, and an unreadable heading makes the
+ * list below it invisible.
+ */
+const CATEGORY_LABEL: Record<
+  string,
+  Partial<Record<Lang, string>> & { en: string }
+> = {
+  VEGETABLE: {
+    en: "Vegetables", hi: "सब्ज़ियाँ", mr: "भाज्या", bn: "সবজি", te: "కూరగాయలు",
+    ta: "காய்கறிகள்", gu: "શાકભાજી", kn: "ತರಕಾರಿಗಳು", ml: "പച്ചക്കറികൾ",
+    pa: "ਸਬਜ਼ੀਆਂ", or: "ପନିପରିବା", as: "শাক-পাচলি", ur: "سبزیاں",
+  },
+  FRUIT: {
+    en: "Fruits", hi: "फल", mr: "फळे", bn: "ফল", te: "పండ్లు", ta: "பழங்கள்",
+    gu: "ફળો", kn: "ಹಣ್ಣುಗಳು", ml: "പഴങ്ങൾ", pa: "ਫਲ", or: "ଫଳ", as: "ফল", ur: "پھل",
+  },
+  GRAIN: {
+    en: "Grains", hi: "अनाज", mr: "धान्य", bn: "শস্য", te: "ధాన్యాలు", ta: "தானியங்கள்",
+    gu: "અનાજ", kn: "ಧಾನ್ಯಗಳು", ml: "ധാന്യങ്ങൾ", pa: "ਅਨਾਜ", or: "ଶସ୍ୟ",
+    as: "শস্য", ur: "اناج",
+  },
+  PULSE: {
+    en: "Pulses", hi: "दालें", mr: "डाळी", bn: "ডাল", te: "పప్పులు", ta: "பருப்புகள்",
+    gu: "કઠોળ", kn: "ಬೇಳೆಕಾಳುಗಳು", ml: "പയറുവർഗ്ഗങ്ങൾ", pa: "ਦਾਲਾਂ", or: "ଡାଲି",
+    as: "দালি", ur: "دالیں",
+  },
+  OILSEED: {
+    en: "Oilseeds", hi: "तिलहन", mr: "तेलबिया", bn: "তৈলবীজ", te: "నూనెగింజలు",
+    ta: "எண்ணெய் வித்துகள்", gu: "તેલીબિયાં", kn: "ಎಣ್ಣೆಕಾಳುಗಳು", ml: "എണ്ണക്കുരുക്കൾ",
+    pa: "ਤੇਲ ਬੀਜ", or: "ତେଲବୀଜ", as: "তেলবীজ", ur: "تیل کے بیج",
+  },
 };
 
 /**
@@ -103,7 +132,7 @@ export function CropPicker({
 
       {visible.length === 0 && (
         <p className="py-3 text-center text-[14px] text-[var(--color-ink-3)]">
-          {lang === "hi"
+          {prefersHindi(lang)
             ? "कोई फ़सल नहीं मिली। नीचे से जोड़ें।"
             : "No crop matched. Add it below."}
         </p>
@@ -114,7 +143,9 @@ export function CropPicker({
           {grouped.map(([category, list]) => (
             <div key={category}>
               <div className="mb-1 font-display text-[11px] font-700 uppercase tracking-[0.14em] text-[var(--color-ink-3)]">
-                {CATEGORY_LABEL[category]?.[lang] ?? category}
+                {CATEGORY_LABEL[category]
+                  ? pick(lang, CATEGORY_LABEL[category])
+                  : category}
               </div>
               <Buttons
                 list={list}
@@ -193,14 +224,14 @@ function Buttons({
             }`}
           >
             <span className="block text-[15px] font-600">
-              {lang === "hi" ? c.nameHi : c.name}
+              {prefersHindi(lang) ? c.nameHi : c.name}
             </span>
             <span
               className={`block text-[11px] ${
                 on ? "text-[var(--color-paper-edge)]" : "text-[var(--color-ink-3)]"
               }`}
             >
-              {lang === "hi" ? c.name : c.nameHi}
+              {prefersHindi(lang) ? c.name : c.nameHi}
               {c.perishability === "HIGH" ? " · ⚠" : ""}
             </span>
           </button>
@@ -289,7 +320,7 @@ function AddCropForm({
 
       <label className="block">
         <span className="mb-1 block text-[12.5px] text-[var(--color-ink-2)]">
-          {lang === "hi" ? "किस तरह की फ़सल" : "Kind of crop"}
+          {prefersHindi(lang) ? "किस तरह की फ़सल" : "Kind of crop"}
         </span>
         <select
           value={category}
@@ -298,7 +329,7 @@ function AddCropForm({
         >
           {Object.entries(CATEGORY_LABEL).map(([k, v]) => (
             <option key={k} value={k}>
-              {v[lang]}
+              {pick(lang, v)}
             </option>
           ))}
         </select>
@@ -317,7 +348,7 @@ function AddCropForm({
           className="w-full accent-[var(--color-pool)]"
         />
         <span className="mt-0.5 block text-[11.5px] leading-snug text-[var(--color-ink-3)]">
-          {lang === "hi"
+          {prefersHindi(lang)
             ? "कटाई के बाद बिना ठंडक के कितने दिन ठीक रहती है। इसी से ख़राबी का अनुमान लगता है।"
             : "How long it stays good after harvest without cooling. The spoilage estimate is built from this."}
         </span>
@@ -348,7 +379,7 @@ function AddCropForm({
       </div>
 
       <p className="text-center text-[11.5px] leading-snug text-[var(--color-ink-3)]">
-        {lang === "hi"
+        {prefersHindi(lang)
           ? "नई फ़सल का सरकारी भाव नहीं आएगा — मंडी का भाव आपको खुद देखना होगा।"
           : "A crop you add has no government price feed, so mandi prices for it will have to be entered by hand."}
       </p>

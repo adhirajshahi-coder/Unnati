@@ -7,7 +7,7 @@ import { unreadCount } from "@/lib/notifications";
 import { Page } from "@/components/Shell";
 import { Slip, SlipHeading, Line } from "@/components/Slip";
 import { TruckForm, NewTripForm } from "@/components/TruckForms";
-import { rupees, t, weight } from "@/lib/i18n";
+import { prefersHindi, rupees, t, weight } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -53,14 +53,14 @@ export default async function TrucksPage() {
                       <h3 className="tnum text-[19px]">{truck.regNo}</h3>
                       <span className="text-[12.5px] text-[var(--color-ink-3)]">
                         {truck.status === "AVAILABLE"
-                          ? lang === "hi"
+                          ? prefersHindi(lang)
                             ? "खाली"
                             : "Available"
                           : truck.status === "ON_TRIP"
-                            ? lang === "hi"
+                            ? prefersHindi(lang)
                               ? "यात्रा पर"
                               : "On a trip"
-                            : lang === "hi"
+                            : prefersHindi(lang)
                               ? "बंद"
                               : "Offline"}
                       </span>
@@ -88,7 +88,7 @@ export default async function TrucksPage() {
                         defaultOrigin={user.village ?? "Depot"}
                         mandis={mandiList.map((m) => ({
                           id: m.id,
-                          label: `${lang === "hi" ? m.nameHi : m.name} · ${m.district}`,
+                          label: `${prefersHindi(lang) ? m.nameHi : m.name} · ${m.district}`,
                         }))}
                       />
                     )}

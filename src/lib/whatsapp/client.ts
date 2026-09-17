@@ -15,6 +15,7 @@
  * work, and an ops dashboard that shows "would have sent 34 messages" is more useful
  * than one that silently drops them.
  */
+import type { Lang } from "@/lib/languages";
 
 const GRAPH = "https://graph.facebook.com/v21.0";
 
@@ -139,7 +140,14 @@ export async function sendText(opts: {
   });
 }
 
-/** Meta's language codes differ from ours for Hindi. */
-export function waLanguageCode(lang: "en" | "hi"): string {
-  return lang === "hi" ? "hi" : "en";
+/**
+ * Our language code as Meta's template locale.
+ *
+ * These happen to agree for every language we speak — Meta uses the same ISO 639-1
+ * codes, with `en` rather than `en_IN` for plain English. Pass the language the
+ * template is actually registered in (`templateLanguage`), not the farmer's preference,
+ * or Meta rejects the send for a locale it has never approved.
+ */
+export function waLanguageCode(lang: Lang): string {
+  return lang;
 }

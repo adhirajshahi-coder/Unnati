@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Slip, SlipHeading } from "@/components/Slip";
-import { t, type Lang } from "@/lib/i18n";
+import { prefersHindi, t, type Lang } from "@/lib/i18n";
 
 interface ListingOption {
   id: string;
@@ -97,7 +97,7 @@ export function JoinButton({
   if (disabled) {
     return (
       <p className="rounded-[3px] border border-[var(--color-rule-strong)] bg-[var(--color-paper-2)] px-4 py-4 text-center text-[15px] text-[var(--color-ink-2)]">
-        {lang === "hi"
+        {prefersHindi(lang)
           ? "यह ट्रक अब और लोड नहीं ले सकता।"
           : "This truck is no longer accepting loads."}
       </p>
@@ -107,7 +107,7 @@ export function JoinButton({
   return (
     <Slip lifted>
       <SlipHeading>
-        {lang === "hi" ? "क्या भेजना है?" : "What are you sending?"}
+        {prefersHindi(lang) ? "क्या भेजना है?" : "What are you sending?"}
       </SlipHeading>
 
       <div className="space-y-2 pt-2">
@@ -138,7 +138,7 @@ export function JoinButton({
               : "border-[var(--color-rule)] bg-[var(--color-paper)]"
           }`}
         >
-          {lang === "hi" ? "कुछ और भेजना है" : "Something else"}
+          {prefersHindi(lang) ? "कुछ और भेजना है" : "Something else"}
         </button>
 
         {listingId === null && (
@@ -196,7 +196,7 @@ export function JoinButton({
         </button>
 
         <p className="text-center text-[12px] leading-snug text-[var(--color-ink-3)]">
-          {lang === "hi"
+          {prefersHindi(lang)
             ? "ट्रक मालिक की मंज़ूरी के बाद ही जगह पक्की होगी। भुगतान डिलीवरी के 14 दिन बाद, याद 7 दिन पहले।"
             : "Your place is confirmed once the truck owner accepts. Payment is due 14 days after delivery, with a reminder 7 days before."}
         </p>

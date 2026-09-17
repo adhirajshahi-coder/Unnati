@@ -17,6 +17,7 @@ import type { Lang } from "@/lib/i18n";
 import { t } from "@/lib/i18n";
 import type { User } from "@/db/schema";
 import { Icon, type IconName } from "@/components/Icon";
+import { LanguageButton } from "@/components/LanguagePicker";
 
 export function Masthead({
   user,
@@ -71,7 +72,7 @@ export function Masthead({
             )}
           </Link>
 
-          <LangToggle lang={lang} />
+          <LanguageButton lang={lang} />
         </div>
       </div>
 
@@ -98,22 +99,6 @@ export function Masthead({
         </form>
       </div>
     </header>
-  );
-}
-
-function LangToggle({ lang }: { lang: Lang }) {
-  const next: Lang = lang === "hi" ? "en" : "hi";
-  return (
-    <form action="/api/language" method="post">
-      <input type="hidden" name="lang" value={next} />
-      <button
-        type="submit"
-        aria-label={next === "hi" ? "हिन्दी में बदलें" : "Switch to English"}
-        className="h-10 rounded-[3px] border border-[var(--color-rule-strong)] bg-[var(--color-paper)] px-2.5 font-body text-[13px] font-500"
-      >
-        {next === "hi" ? "हिन्दी" : "EN"}
-      </button>
-    </form>
   );
 }
 

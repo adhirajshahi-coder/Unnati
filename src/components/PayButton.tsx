@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { rupees, t, type Lang } from "@/lib/i18n";
+import { prefersHindi, rupees, t, type Lang } from "@/lib/i18n";
 
 /**
  * UPI settlement.
@@ -60,7 +60,7 @@ export function PayButton({
       )}
 
       <p className="mt-1 text-center text-[11.5px] text-[var(--color-ink-3)]">
-        {lang === "hi"
+        {prefersHindi(lang)
           ? "डेमो: असली UPI भुगतान नहीं होगा।"
           : "Demo only — no real UPI payment is made."}
       </p>

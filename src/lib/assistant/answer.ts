@@ -30,7 +30,7 @@ import { roadDistanceKm } from "@/lib/engine/geo";
 import { preferPrice } from "@/lib/engine/sources";
 import { LIVE_SOURCE } from "@/lib/pricefeed";
 import { projectNewPool } from "@/lib/engine/grouping";
-import { rupees, weight, type Lang } from "@/lib/i18n";
+import { prefersHindi, rupees, weight, type Lang } from "@/lib/i18n";
 import type { Intent } from "./intents";
 
 export interface Answer {
@@ -90,11 +90,11 @@ async function bestMandi(
     return {
       intent: "BEST_MANDI",
       text:
-        lang === "hi"
+        prefersHindi(lang)
           ? "किस फ़सल के बारे में पूछ रहे हैं? फ़सल का नाम बताइए — जैसे “प्याज़ कहाँ बेचूँ”।"
           : "Which crop? Name it and I will work it out — for example “where should I sell onion”.",
       suggestions:
-        lang === "hi"
+        prefersHindi(lang)
           ? ["प्याज़ कहाँ बेचूँ", "टमाटर का भाव", "आलू कहाँ बेचूँ"]
           : ["Where should I sell onion", "Tomato price today", "Where should I sell potato"],
     };
@@ -116,33 +116,33 @@ async function bestMandi(
     return {
       intent: "BEST_MANDI",
       text:
-        lang === "hi"
+        prefersHindi(lang)
           ? "आपके आस-पास इस फ़सल का कोई ताज़ा भाव नहीं मिला।"
           : "I have no recent price for that crop near you.",
-      link: { href: "/mandis", label: lang === "hi" ? "मंडियाँ देखें" : "See mandis" },
+      link: { href: "/mandis", label: prefersHindi(lang) ? "मंडियाँ देखें" : "See mandis" },
     };
   }
 
   const best = top[0];
-  const cropName = lang === "hi" ? result.crop.nameHi : result.crop.name;
-  const mandiName = lang === "hi" ? best.mandi.nameHi : best.mandi.name;
+  const cropName = prefersHindi(lang) ? result.crop.nameHi : result.crop.name;
+  const mandiName = prefersHindi(lang) ? best.mandi.nameHi : best.mandi.name;
 
   return {
     intent: "BEST_MANDI",
     text:
-      lang === "hi"
+      prefersHindi(lang)
         ? `10 क्विंटल ${cropName} के लिए ${mandiName} सबसे अच्छी है — ढुलाई, आढ़त और ख़राबी काटकर ${rupees(best.netValue)} बचते हैं। भाव ${rupees(best.mandi.modalPrice)}/क्विंटल है, दूरी ${best.distanceKm}${NBSP}किमी।`
         : `For 10 quintal of ${cropName}, ${mandiName} leaves you the most: ${rupees(best.netValue)} after transport, commission and spoilage. The board price is ${rupees(best.mandi.modalPrice)}/quintal and it is ${best.distanceKm}${NBSP}km away.`,
     facts: top.map((r) => ({
-      label: lang === "hi" ? r.mandi.nameHi : r.mandi.name,
+      label: prefersHindi(lang) ? r.mandi.nameHi : r.mandi.name,
       value: `${rupees(r.netValue)} · ${r.distanceKm} km`,
     })),
     link: {
       href: `/farmer/sell?crop=${cropId}&qty=1000&grade=B&since=6&radius=200`,
-      label: lang === "hi" ? "अपनी मात्रा डालकर देखें" : "Check with your own quantity",
+      label: prefersHindi(lang) ? "अपनी मात्रा डालकर देखें" : "Check with your own quantity",
     },
     suggestions:
-      lang === "hi"
+      prefersHindi(lang)
         ? ["ट्रक कैसे साझा करूँ?", `${cropName} कैसे पैक करें?`]
         : ["How do I share a truck?", `How should I pack ${cropName}?`],
   };
@@ -155,10 +155,10 @@ async function price(user: User, lang: Lang, cropId?: string): Promise<Answer> {
     return {
       intent: "PRICE",
       text:
-        lang === "hi"
+        prefersHindi(lang)
           ? "किस फ़सल का भाव चाहिए? नाम बताइए — जैसे “टमाटर का भाव”।"
           : "Which crop? Name it — for example “tomato price”.",
-      link: { href: "/mandis", label: lang === "hi" ? "सभी भाव देखें" : "See all prices" },
+      link: { href: "/mandis", label: prefersHindi(lang) ? "सभी भाव देखें" : "See all prices" },
     };
   }
 
@@ -206,10 +206,10 @@ async function price(user: User, lang: Lang, cropId?: string): Promise<Answer> {
     return {
       intent: "PRICE",
       text:
-        lang === "hi"
+        prefersHindi(lang)
           ? `आपके 200 किमी के दायरे में ${crop.nameHi} का कोई भाव दर्ज नहीं है।`
           : `I have no price for ${crop.name} within 200 km of you.`,
-      link: { href: "/mandis", label: lang === "hi" ? "मंडियाँ देखें" : "See mandis" },
+      link: { href: "/mandis", label: prefersHindi(lang) ? "मंडियाँ देखें" : "See mandis" },
     };
   }
 
@@ -222,19 +222,19 @@ async function price(user: User, lang: Lang, cropId?: string): Promise<Answer> {
   return {
     intent: "PRICE",
     text:
-      lang === "hi"
-        ? `${crop.nameHi} का सबसे ऊँचा भाव ${lang === "hi" ? top.nameHi : top.name} में ${rupees(top.modalPrice)}/क्विंटल है${live ? " (सरकारी फ़ीड से, " + ageH + " घंटे पुराना)" : " (ऐप का अनुमान)"}। याद रखें — ढुलाई और आढ़त काटने के बाद ही असली कमाई पता चलती है।`
+      prefersHindi(lang)
+        ? `${crop.nameHi} का सबसे ऊँचा भाव ${prefersHindi(lang) ? top.nameHi : top.name} में ${rupees(top.modalPrice)}/क्विंटल है${live ? " (सरकारी फ़ीड से, " + ageH + " घंटे पुराना)" : " (ऐप का अनुमान)"}। याद रखें — ढुलाई और आढ़त काटने के बाद ही असली कमाई पता चलती है।`
         : `The highest price for ${crop.name} near you is ${rupees(top.modalPrice)}/quintal at ${top.name}${live ? `, from the government feed ${ageH} h ago` : ", from the app's baseline"}. What you actually keep depends on transport and commission, though.`,
     facts: nearby.map((r) => ({
-      label: `${lang === "hi" ? r.nameHi : r.name} · ${r.distanceKm} km`,
+      label: `${prefersHindi(lang) ? r.nameHi : r.name} · ${r.distanceKm} km`,
       value: `${rupees(r.modalPrice)}${r.source === LIVE_SOURCE ? " ●" : ""}`,
     })),
     link: {
       href: `/farmer/sell?crop=${cropId}&qty=1000&grade=B&since=6&radius=200`,
-      label: lang === "hi" ? "असली कमाई निकालें" : "Work out what you would keep",
+      label: prefersHindi(lang) ? "असली कमाई निकालें" : "Work out what you would keep",
     },
     suggestions:
-      lang === "hi"
+      prefersHindi(lang)
         ? [`${crop.nameHi} कहाँ बेचूँ?`, "ट्रक कैसे साझा करूँ?"]
         : [`Where should I sell ${crop.name}?`, "How do I share a truck?"],
   };
@@ -255,19 +255,19 @@ async function shareTruck(
     return {
       intent: "SHARE_TRUCK",
       text:
-        lang === "hi"
+        prefersHindi(lang)
           ? `हाँ — ${g.mandiName} जाने के लिए एक समूह अभी बन रहा है। ${g.memberCount} किसान जुड़ चुके हैं और ${weight(g.committedKg, lang)} तैयार है। जितने ज़्यादा किसान, उतना कम खर्च सबका।`
           : `Yes — a group is gathering for ${g.mandiName} right now. ${g.memberCount} farmers have joined with ${weight(g.committedKg, lang)} between them. The more who join, the less each of you pays.`,
       facts: groups.slice(0, 3).map((x) => ({
-        label: lang === "hi" ? x.mandiNameHi : x.mandiName,
+        label: prefersHindi(lang) ? x.mandiNameHi : x.mandiName,
         value: `${x.memberCount} · ${weight(x.committedKg, lang)}`,
       })),
       link: {
         href: `/farmer/pool/${g.id}`,
-        label: lang === "hi" ? "समूह देखें" : "See the group",
+        label: prefersHindi(lang) ? "समूह देखें" : "See the group",
       },
       suggestions:
-        lang === "hi"
+        prefersHindi(lang)
           ? ["खर्च कैसे बँटता है?", "आस-पास कौन है?"]
           : ["How is the cost split?", "Who is near me?"],
     };
@@ -279,17 +279,17 @@ async function shareTruck(
   return {
     intent: "SHARE_TRUCK",
     text:
-      lang === "hi"
+      prefersHindi(lang)
         ? `अभी आपके आस-पास कोई समूह नहीं चल रहा — पर आप ख़ुद शुरू कर सकते हैं। “उपज बेचें” में फ़सल चुनकर “ट्रक साझा करें” दबाइए; आस-पास के किसानों को ख़बर चली जाएगी। 10 क्विंटल के लिए अकेले ट्रक लेने पर करीब ${rupees(p.soloCost)} लगते हैं, साझा करने पर लगभग ${rupees(p.shareNow)}।`
         : `No group is running near you yet — but you can start one. Pick your crop under “Sell produce” and choose “Share a truck”; farmers nearby are told automatically. For 10 quintal over about 70 km, hiring alone costs around ${rupees(p.soloCost)} and sharing brings it near ${rupees(p.shareNow)}.`,
     link: {
       href: cropId
         ? `/farmer/sell?crop=${cropId}&qty=1000&grade=B&since=6&radius=200`
         : "/farmer/sell",
-      label: lang === "hi" ? "शुरू करें" : "Start one",
+      label: prefersHindi(lang) ? "शुरू करें" : "Start one",
     },
     suggestions:
-      lang === "hi"
+      prefersHindi(lang)
         ? ["आस-पास कौन है?", "खर्च कैसे बँटता है?"]
         : ["Who is near me?", "How is the cost split?"],
   };
@@ -327,10 +327,10 @@ async function myTrips(user: User, lang: Lang): Promise<Answer> {
     return {
       intent: "MY_TRIPS",
       text:
-        lang === "hi"
+        prefersHindi(lang)
           ? "अभी आपकी कोई उपज रास्ते में नहीं है।"
           : "You have nothing in transit right now.",
-      link: { href: "/farmer/sell", label: lang === "hi" ? "उपज भेजें" : "Send produce" },
+      link: { href: "/farmer/sell", label: prefersHindi(lang) ? "उपज भेजें" : "Send produce" },
     };
   }
 
@@ -342,7 +342,7 @@ async function myTrips(user: User, lang: Lang): Promise<Answer> {
     .orderBy(desc(trackingPings.at))
     .limit(1);
 
-  const mandiName = lang === "hi" ? t.mandiNameHi : t.mandiName;
+  const mandiName = prefersHindi(lang) ? t.mandiNameHi : t.mandiName;
   const seen = ping
     ? Math.round((Date.now() - new Date(ping.at).getTime()) / 60_000)
     : null;
@@ -350,21 +350,21 @@ async function myTrips(user: User, lang: Lang): Promise<Answer> {
   return {
     intent: "MY_TRIPS",
     text:
-      lang === "hi"
+      prefersHindi(lang)
         ? `आपकी ${weight(t.quantityKg, lang)} उपज ${mandiName} जा रही है। स्थिति: ${statusHi(t.status)}${seen !== null ? `, ट्रक ${seen} मिनट पहले देखा गया` : ""}।`
         : `Your ${weight(t.quantityKg, lang)} is going to ${mandiName}. Status: ${statusEn(t.status)}${seen !== null ? `, truck last seen ${seen} min ago` : ""}.`,
     facts: rows.map((r) => ({
-      label: lang === "hi" ? r.mandiNameHi : r.mandiName,
+      label: prefersHindi(lang) ? r.mandiNameHi : r.mandiName,
       value:
         r.loadStatus === "REQUESTED"
-          ? lang === "hi"
+          ? prefersHindi(lang)
             ? "मंज़ूरी बाकी"
             : "awaiting approval"
           : rupees(r.costShare),
     })),
     link: {
       href: `/farmer/trip/${t.tripId}`,
-      label: lang === "hi" ? "ट्रक देखें" : "Track the truck",
+      label: prefersHindi(lang) ? "ट्रक देखें" : "Track the truck",
     },
   };
 }
@@ -424,27 +424,27 @@ async function myMoney(user: User, lang: Lang): Promise<Answer> {
     intent: "MY_MONEY",
     text:
       owed > 0
-        ? lang === "hi"
+        ? prefersHindi(lang)
           ? `आपका ${rupees(owed)} बाकी है${dueLabel ? `, ${dueLabel} तक देना है` : ""}। हर भुगतान की याद देय तिथि से 7 दिन पहले भेजी जाती है।`
           : `You owe ${rupees(owed)}${dueLabel ? `, due by ${dueLabel}` : ""}. Every payment is flagged seven days before its due date.`
-        : lang === "hi"
+        : prefersHindi(lang)
           ? "अभी आपका कोई भुगतान बाकी नहीं है।"
           : "You have nothing outstanding right now.",
     facts: [
       {
-        label: lang === "hi" ? "मंडी से मिला" : "Received from mandis",
+        label: prefersHindi(lang) ? "मंडी से मिला" : "Received from mandis",
         value: rupees(earned),
       },
       {
-        label: lang === "hi" ? "ढुलाई पर खर्च" : "Spent on transport",
+        label: prefersHindi(lang) ? "ढुलाई पर खर्च" : "Spent on transport",
         value: rupees(paidTransport),
       },
       {
-        label: lang === "hi" ? "बाकी" : "Outstanding",
+        label: prefersHindi(lang) ? "बाकी" : "Outstanding",
         value: rupees(owed),
       },
     ],
-    link: { href: "/farmer/earnings", label: lang === "hi" ? "हिसाब देखें" : "See the ledger" },
+    link: { href: "/farmer/earnings", label: prefersHindi(lang) ? "हिसाब देखें" : "See the ledger" },
   };
 }
 
@@ -457,7 +457,7 @@ async function cropCare(lang: Lang, cropId?: string): Promise<Answer> {
     return {
       intent: "CROP_CARE",
       text:
-        lang === "hi"
+        prefersHindi(lang)
           ? "किस फ़सल के बारे में? नाम बताइए — जैसे “टमाटर कैसे पैक करें”।"
           : "Which crop? Name it — for example “how should I pack tomatoes”.",
     };
@@ -474,20 +474,20 @@ async function cropCare(lang: Lang, cropId?: string): Promise<Answer> {
 
   return {
     intent: "CROP_CARE",
-    text: lang === "hi" ? crop.handlingTipHi : crop.handlingTip,
+    text: prefersHindi(lang) ? crop.handlingTipHi : crop.handlingTip,
     facts: [
       {
-        label: lang === "hi" ? "कितने दिन टिकती है" : "Keeps for about",
-        value: `${days} ${lang === "hi" ? "दिन" : "days"}`,
+        label: prefersHindi(lang) ? "कितने दिन टिकती है" : "Keeps for about",
+        value: `${days} ${prefersHindi(lang) ? "दिन" : "days"}`,
       },
       {
-        label: lang === "hi" ? "रोज़ का नुकसान" : "Value lost per day",
+        label: prefersHindi(lang) ? "रोज़ का नुकसान" : "Value lost per day",
         value: `${Math.round(crop.spoilageRatePerDay * 1000) / 10}%`,
       },
     ],
     link: {
       href: `/farmer/sell?crop=${crop.id}&qty=1000&grade=B&since=6&radius=200`,
-      label: lang === "hi" ? "कहाँ भेजें देखें" : "See where to send it",
+      label: prefersHindi(lang) ? "कहाँ भेजें देखें" : "See where to send it",
     },
   };
 }
@@ -526,25 +526,25 @@ async function neighbours(user: User, lang: Lang): Promise<Answer> {
     intent: "NEIGHBOURS",
     text:
       near.length === 0
-        ? lang === "hi"
+        ? prefersHindi(lang)
           ? "आपके 60 किमी के दायरे में अभी कोई दर्ज नहीं है।"
           : "Nobody is registered within 60 km of you yet."
-        : lang === "hi"
+        : prefersHindi(lang)
           ? `आपके आस-पास ${farmers.length} किसान और ${operators.length} ट्रक मालिक हैं। एक ही मंडी जाने वाले किसान मिलकर एक ट्रक साझा कर सकते हैं।`
           : `There are ${farmers.length} farmers and ${operators.length} truck owners within reach of you. Farmers heading to the same mandi can share one truck between them.`,
     facts: near.slice(0, 5).map((p) => ({
       label: `${p.name}${p.village ? ` · ${p.village}` : ""}`,
       value: `${p.distanceKm} km · ${
         p.role === "OPERATOR"
-          ? lang === "hi"
+          ? prefersHindi(lang)
             ? "ट्रक मालिक"
             : "truck owner"
-          : lang === "hi"
+          : prefersHindi(lang)
             ? "किसान"
             : "farmer"
       }`,
     })),
-    link: { href: "/connect", label: lang === "hi" ? "सब देखें" : "See everyone" },
+    link: { href: "/connect", label: prefersHindi(lang) ? "सब देखें" : "See everyone" },
   };
 }
 
@@ -554,11 +554,11 @@ function howItWorks(lang: Lang): Answer {
   return {
     intent: "HOW_IT_WORKS",
     text:
-      lang === "hi"
+      prefersHindi(lang)
         ? "उन्नति तीन काम करती है। पहला — हर मंडी का भाव लेकर ढुलाई, आढ़त और ख़राबी काटकर बताती है कि असल में आपके हाथ में कितना आएगा; सबसे ऊँचा भाव अक्सर सबसे ज़्यादा मुनाफ़ा नहीं देता। दूसरा — एक ही मंडी जाने वाले किसानों को जोड़कर एक ट्रक साझा कराती है, जिससे छोटे किसान का खर्च आधे से भी कम हो जाता है। तीसरा — खर्च वज़न के हिसाब से बँटता है, और किसी एक के लिए किया गया अतिरिक्त चक्कर उसी के खाते में जाता है, ताकि कोई किसी का बोझ न उठाए।"
         : "UNNATI does three things. First, it takes every mandi's price and subtracts transport, commission and spoilage, so you see what you would actually keep — the highest board price is often not the best deal. Second, it puts farmers heading to the same mandi into one truck, which cuts a smallholder's transport cost by more than half. Third, the cost splits by weight, and a detour driven to collect one farmer is charged to that farmer alone, so nobody subsidises anybody.",
     suggestions:
-      lang === "hi"
+      prefersHindi(lang)
         ? ["ट्रक कैसे साझा करूँ?", "प्याज़ कहाँ बेचूँ?"]
         : ["How do I share a truck?", "Where should I sell onion?"],
   };
@@ -568,10 +568,10 @@ function humanHelp(lang: Lang): Answer {
   return {
     intent: "HUMAN_HELP",
     text:
-      lang === "hi"
+      prefersHindi(lang)
         ? "किसी इंसान से बात करने के लिए अपने इलाके के UNNATI फ़ील्ड सहायक से संपर्क करें। जिस यात्रा या समूह में आप हैं, उसके पन्ने पर ट्रक मालिक का फ़ोन नंबर दिया रहता है — ढुलाई से जुड़ी बात के लिए वही सबसे तेज़ रास्ता है।"
         : "For a person, contact your local UNNATI field coordinator. For anything about a specific booking, the truck owner's phone number is on that trip's page — that is usually the fastest route.",
-    link: { href: "/farmer/trips", label: lang === "hi" ? "मेरी यात्राएँ" : "My trips" },
+    link: { href: "/farmer/trips", label: prefersHindi(lang) ? "मेरी यात्राएँ" : "My trips" },
   };
 }
 
@@ -579,11 +579,11 @@ function unknown(lang: Lang): Answer {
   return {
     intent: "UNKNOWN",
     text:
-      lang === "hi"
+      prefersHindi(lang)
         ? "यह मैं ठीक से समझ नहीं पाया। मैं भाव, कहाँ बेचना है, ट्रक साझा करना, आपका हिसाब और फ़सल की देखभाल — इन सब में मदद कर सकता हूँ।"
         : "I did not follow that. I can help with prices, where to sell, sharing a truck, your ledger, and how to handle a crop.",
     suggestions:
-      lang === "hi"
+      prefersHindi(lang)
         ? ["प्याज़ का भाव", "प्याज़ कहाँ बेचूँ", "ट्रक कैसे साझा करूँ", "मेरा कितना बाकी है"]
         : [
             "Onion price today",

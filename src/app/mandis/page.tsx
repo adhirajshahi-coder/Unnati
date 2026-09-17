@@ -12,7 +12,7 @@ import { Page } from "@/components/Shell";
 import { Slip, SlipHeading } from "@/components/Slip";
 import { LocationPicker } from "@/components/LocationPicker";
 import { DEFAULT_LOCATIONS } from "@/data/mandis";
-import { rupees, t } from "@/lib/i18n";
+import { prefersHindi, rupees, t } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -126,7 +126,7 @@ export default async function MandisPage({
             <option value="">{t("allCrops", lang)}</option>
             {cropList.map((c) => (
               <option key={c.id} value={c.id}>
-                {lang === "hi" ? c.nameHi : c.name}
+                {prefersHindi(lang) ? c.nameHi : c.name}
               </option>
             ))}
           </select>
@@ -145,7 +145,7 @@ export default async function MandisPage({
             type="submit"
             className="rounded-[3px] bg-[var(--color-keep)] px-4 font-display text-[14px] font-700 uppercase tracking-[0.06em] text-[var(--color-paper-2)]"
           >
-            {lang === "hi" ? "दिखाएँ" : "Show"}
+            {prefersHindi(lang) ? "दिखाएँ" : "Show"}
           </button>
         </form>
       </div>
@@ -158,7 +158,7 @@ export default async function MandisPage({
 
       {nearby.length === 0 ? (
         <p className="py-10 text-center text-[15px] text-[var(--color-ink-3)]">
-          {lang === "hi"
+          {prefersHindi(lang)
             ? "इस दूरी में कोई मंडी नहीं मिली। दूरी बढ़ाकर देखें।"
             : "No mandi within this distance. Try a wider radius."}
         </p>
@@ -172,7 +172,7 @@ export default async function MandisPage({
               >
                 <div className="flex items-baseline justify-between gap-2">
                   <h3 className="text-[18px] leading-tight">
-                    {lang === "hi" ? row.mandi.nameHi : row.mandi.name}
+                    {prefersHindi(lang) ? row.mandi.nameHi : row.mandi.name}
                   </h3>
                   <span className="tnum shrink-0 text-[13px] text-[var(--color-ink-2)]">
                     {row.distanceKm} km
@@ -181,7 +181,7 @@ export default async function MandisPage({
                 <p className="text-[12px] text-[var(--color-ink-3)]">
                   {row.mandi.district}, {row.mandi.state} · {row.mandi.region}
                   {" · "}
-                  {lang === "hi" ? "आढ़त" : "commission"}{" "}
+                  {prefersHindi(lang) ? "आढ़त" : "commission"}{" "}
                   {Math.round(row.mandi.commissionRate * 100)}%
                 </p>
 
@@ -203,7 +203,7 @@ export default async function MandisPage({
                           className="flex items-baseline justify-between gap-2 border-b border-dotted border-[var(--color-rule)] py-1.5 last:border-0"
                         >
                           <span className="min-w-0 truncate text-[14px]">
-                            {lang === "hi" ? p.cropNameHi : p.cropName}
+                            {prefersHindi(lang) ? p.cropNameHi : p.cropName}
                             {isLive && (
                               <span className="ml-1.5 rounded-[2px] bg-[var(--color-keep)] px-1 py-px text-[10px] font-600 uppercase tracking-wide text-[var(--color-paper-2)]">
                                 {t("livePrice", lang)}
@@ -228,7 +228,7 @@ export default async function MandisPage({
                 {!cropId && row.totalPrices > row.prices.length && (
                   <p className="mt-1.5 text-[11.5px] text-[var(--color-ink-3)]">
                     +{row.totalPrices - row.prices.length}{" "}
-                    {lang === "hi" ? "और फ़सलें" : "more crops"}
+                    {prefersHindi(lang) ? "और फ़सलें" : "more crops"}
                   </p>
                 )}
 
@@ -236,7 +236,7 @@ export default async function MandisPage({
                   href={`/farmer/sell?crop=${row.prices[0]?.cropId ?? "onion"}&qty=1000&grade=B&since=6&radius=${Math.max(radiusKm, Math.ceil(row.distanceKm) + 10)}`}
                   className="mt-2 block text-[13px] underline decoration-dotted underline-offset-2 text-[var(--color-keep)]"
                 >
-                  {lang === "hi"
+                  {prefersHindi(lang)
                     ? "यहाँ भेजने पर कितना मिलेगा?"
                     : "What would I take home sending here?"}
                 </Link>
@@ -247,7 +247,7 @@ export default async function MandisPage({
       )}
 
       <p className="mt-4 text-[12px] leading-snug text-[var(--color-ink-3)]">
-        {lang === "hi"
+        {prefersHindi(lang)
           ? "“लाइव” भाव भारत सरकार के Agmarknet फ़ीड से आते हैं। जिन मंडियों ने आज भाव नहीं भेजा, उनके लिए ऐप का अपना अनुमान दिखता है — भाव के साथ उसकी उम्र लिखी रहती है।"
           : "“Live” prices come from the Government of India Agmarknet feed. Mandis that have not reported today show the app’s shipped baseline instead, and every figure carries its age."}
       </p>

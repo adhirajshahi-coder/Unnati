@@ -18,7 +18,7 @@ import { roadDistanceKm } from "@/lib/engine/geo";
 import { Page } from "@/components/Shell";
 import { Slip, SlipHeading } from "@/components/Slip";
 import { InviteButton } from "@/components/InviteButton";
-import { rupees, weight } from "@/lib/i18n";
+import { prefersHindi, rupees, weight } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -171,7 +171,7 @@ export default async function ConnectPage() {
   return (
     <Page user={user} lang={lang} active="connect" unread={unread}>
       <p className="mb-4 text-[14px] leading-relaxed text-[var(--color-ink-2)]">
-        {lang === "hi"
+        {prefersHindi(lang)
           ? `आपके ${REACH_KM} किमी के दायरे में ${nearbyFarmers.length} किसान और ${nearbyOperators.length} ट्रक मालिक हैं। एक ही मंडी जाने वाले किसान मिलकर एक ट्रक साझा करें तो सबका खर्च घटता है।`
           : `${plural(nearbyFarmers.length, "farmer", "farmers")} and ${plural(nearbyOperators.length, "truck owner", "truck owners")} are within ${REACH_KM} km of you. Farmers heading to the same mandi can put one truck between them and all pay less.`}
       </p>
@@ -180,7 +180,7 @@ export default async function ConnectPage() {
       {groups.length > 0 && (
         <section className="mb-6">
           <SlipHeading right={`${groups.length}`}>
-            {lang === "hi" ? "एक ही रास्ते पर" : "Going the same way"}
+            {prefersHindi(lang) ? "एक ही रास्ते पर" : "Going the same way"}
           </SlipHeading>
           <div className="mt-2 space-y-3">
             {groups.slice(0, 4).map((g) => (
@@ -188,15 +188,15 @@ export default async function ConnectPage() {
                 <Slip>
                   <div className="flex items-baseline justify-between gap-2">
                     <h3 className="text-[17px]">
-                      {lang === "hi" ? g.mandiNameHi : g.mandiName}
+                      {prefersHindi(lang) ? g.mandiNameHi : g.mandiName}
                     </h3>
                     <span className="tnum shrink-0 text-[13px] font-600 text-[var(--color-pool)]">
                       {weight(g.committedKg, lang)}
                     </span>
                   </div>
                   <p className="tnum text-[12.5px] text-[var(--color-ink-3)]">
-                    {g.memberCount} {lang === "hi" ? "किसान" : "farmers"} ·{" "}
-                    {lang === "hi" ? "शुरू किया" : "started by"} {g.startedBy} ·{" "}
+                    {g.memberCount} {prefersHindi(lang) ? "किसान" : "farmers"} ·{" "}
+                    {prefersHindi(lang) ? "शुरू किया" : "started by"} {g.startedBy} ·{" "}
                     {g.originName}
                   </p>
                 </Slip>
@@ -208,12 +208,12 @@ export default async function ConnectPage() {
 
       <section className="mb-6">
         <SlipHeading right={`${nearbyFarmers.length}`}>
-          {lang === "hi" ? "आस-पास के किसान" : "Farmers near you"}
+          {prefersHindi(lang) ? "आस-पास के किसान" : "Farmers near you"}
         </SlipHeading>
 
         {nearbyFarmers.length === 0 ? (
           <p className="py-6 text-center text-[15px] text-[var(--color-ink-3)]">
-            {lang === "hi"
+            {prefersHindi(lang)
               ? "अभी आपके पास कोई और किसान दर्ज नहीं है।"
               : "No other farmers are registered near you yet."}
           </p>
@@ -235,11 +235,11 @@ export default async function ConnectPage() {
 
                   {has.length > 0 && (
                     <p className="mt-1.5 text-[13.5px] text-[var(--color-ink-2)]">
-                      {lang === "hi" ? "तैयार: " : "Ready to send: "}
+                      {prefersHindi(lang) ? "तैयार: " : "Ready to send: "}
                       {has
                         .map(
                           (l) =>
-                            `${lang === "hi" ? l.cropNameHi : l.cropName} ${weight(l.quantityKg, lang)}`,
+                            `${prefersHindi(lang) ? l.cropNameHi : l.cropName} ${weight(l.quantityKg, lang)}`,
                         )
                         .join(", ")}
                     </p>
@@ -253,7 +253,7 @@ export default async function ConnectPage() {
                         farmerName={f.name}
                         poolId={invitable.poolId}
                         mandiName={
-                          lang === "hi"
+                          prefersHindi(lang)
                             ? invitable.mandiNameHi
                             : invitable.mandiName
                         }
@@ -263,7 +263,7 @@ export default async function ConnectPage() {
 
                   {invitable && alreadyIn.has(f.id) && (
                     <p className="mt-2 text-[13px] text-[var(--color-keep)]">
-                      {lang === "hi"
+                      {prefersHindi(lang)
                         ? "आपके समूह में पहले से हैं"
                         : "Already in your group"}
                     </p>
@@ -276,7 +276,7 @@ export default async function ConnectPage() {
 
         {user.role === "FARMER" && !invitable && nearbyFarmers.length > 0 && (
           <p className="mt-2 text-[12.5px] leading-snug text-[var(--color-ink-3)]">
-            {lang === "hi"
+            {prefersHindi(lang)
               ? "किसी को बुलाने के लिए पहले अपना समूह शुरू करें — “उपज बेचें” में फ़सल चुनकर “ट्रक साझा करें” दबाइए।"
               : "Start a group first and you can invite them into it — pick a crop under “Sell produce” and choose “Share a truck”."}
           </p>
@@ -285,12 +285,12 @@ export default async function ConnectPage() {
 
       <section>
         <SlipHeading right={`${nearbyOperators.length}`}>
-          {lang === "hi" ? "आस-पास के ट्रक मालिक" : "Truck owners near you"}
+          {prefersHindi(lang) ? "आस-पास के ट्रक मालिक" : "Truck owners near you"}
         </SlipHeading>
 
         {nearbyOperators.length === 0 ? (
           <p className="py-6 text-center text-[15px] text-[var(--color-ink-3)]">
-            {lang === "hi"
+            {prefersHindi(lang)
               ? "अभी आपके इलाके में कोई ट्रक मालिक दर्ज नहीं है।"
               : "No truck owners are registered in your area yet."}
           </p>
@@ -311,7 +311,7 @@ export default async function ConnectPage() {
                   <p className="text-[12.5px] text-[var(--color-ink-3)]">
                     {[o.village, o.district].filter(Boolean).join(", ")} ·{" "}
                     {available.length}/{theirs.length}{" "}
-                    {lang === "hi" ? "ट्रक खाली" : "trucks free"}
+                    {prefersHindi(lang) ? "ट्रक खाली" : "trucks free"}
                   </p>
 
                   {theirs.length > 0 && (
@@ -351,7 +351,7 @@ export default async function ConnectPage() {
       </section>
 
       <p className="mt-4 text-[12px] leading-snug text-[var(--color-ink-3)]">
-        {lang === "hi"
+        {prefersHindi(lang)
           ? "फ़ोन नंबर यहाँ नहीं दिखाए जाते। जिस यात्रा में आप शामिल होते हैं, उसी के पन्ने पर ट्रक मालिक का नंबर मिलता है। बाकी बातचीत ऐप के न्योते से होती है, जिसे सामने वाला मना भी कर सकता है।"
           : "Phone numbers are not listed here. You get the truck owner’s number on a trip you have joined; everything else happens through an invitation the other person can decline."}
       </p>
@@ -361,7 +361,7 @@ export default async function ConnectPage() {
           href="/help"
           className="text-[14px] underline decoration-dotted underline-offset-2 text-[var(--color-keep)]"
         >
-          {lang === "hi" ? "कोई सवाल? तुरंत मदद लें" : "Questions? Get instant help"}
+          {prefersHindi(lang) ? "कोई सवाल? तुरंत मदद लें" : "Questions? Get instant help"}
         </Link>
       </p>
     </Page>

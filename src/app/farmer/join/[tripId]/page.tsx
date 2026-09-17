@@ -11,7 +11,7 @@ import { soloCost, savings } from "@/lib/engine/costs";
 import { Page } from "@/components/Shell";
 import { Slip, SlipHeading, Line, Stamp } from "@/components/Slip";
 import { JoinButton } from "@/components/JoinButton";
-import { rupees, t, weight } from "@/lib/i18n";
+import { prefersHindi, rupees, t, weight } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -139,7 +139,7 @@ export default async function JoinTripPage({
             {t("poolingAvailable", lang)}
           </div>
           <h1 className="text-[26px] leading-tight">
-            {lang === "hi" ? trip.mandiNameHi : trip.mandiName}
+            {prefersHindi(lang) ? trip.mandiNameHi : trip.mandiName}
           </h1>
           <div className="tnum text-[12.5px] text-[var(--color-ink-3)]">
             {trip.originName} → {trip.baseDistanceKm} km ·{" "}
@@ -168,18 +168,18 @@ export default async function JoinTripPage({
           />
           <Line
             index={2}
-            label={lang === "hi" ? "आपकी मात्रा" : "Your load"}
+            label={prefersHindi(lang) ? "आपकी मात्रा" : "Your load"}
             value={weight(quantityKg, lang)}
           />
           <Line
             index={3}
-            label={lang === "hi" ? "आपके लिए चक्कर" : "Detour to collect you"}
+            label={prefersHindi(lang) ? "आपके लिए चक्कर" : "Detour to collect you"}
             sub={
               detour === 0
-                ? lang === "hi"
+                ? prefersHindi(lang)
                   ? "रास्ते में ही है — कोई अतिरिक्त खर्च नहीं"
                   : "You are on the route — no extra charge"
-                : lang === "hi"
+                : prefersHindi(lang)
                   ? "यह खर्च सिर्फ़ आपका है"
                   : "Charged to you alone, not split"
             }
@@ -209,11 +209,11 @@ export default async function JoinTripPage({
           <div className="mt-1 flex gap-3 text-[11.5px] text-[var(--color-ink-3)]">
             <span>
               <span className="mr-1 inline-block h-2 w-2 bg-[var(--color-keep)]" />
-              {lang === "hi" ? "पहले से भरा" : "Already booked"}
+              {prefersHindi(lang) ? "पहले से भरा" : "Already booked"}
             </span>
             <span>
               <span className="mr-1 inline-block h-2 w-2 bg-[var(--color-pool)]" />
-              {lang === "hi" ? "आपका हिस्सा" : "Your load"}
+              {prefersHindi(lang) ? "आपका हिस्सा" : "Your load"}
             </span>
           </div>
         </div>
@@ -226,7 +226,7 @@ export default async function JoinTripPage({
                 {t("youSave", lang)} {rupees(saved.saved)}
               </div>
               <div className="text-[12px] text-[var(--color-ink-3)]">
-                {lang === "hi"
+                {prefersHindi(lang)
                   ? `पूरा ट्रक लेने पर ${rupees(solo)} लगता`
                   : `Hiring the whole truck would cost ${rupees(solo)}`}
               </div>
@@ -249,7 +249,7 @@ export default async function JoinTripPage({
                 <span className="min-w-0">
                   <span className="block truncate text-[15px]">{a.farmerName}</span>
                   <span className="tnum block text-[12px] text-[var(--color-ink-3)]">
-                    {lang === "hi" ? a.cropNameHi : a.cropName} ·{" "}
+                    {prefersHindi(lang) ? a.cropNameHi : a.cropName} ·{" "}
                     {weight(a.quantityKg, lang)} · {a.pickupName}
                   </span>
                 </span>
@@ -260,7 +260,7 @@ export default async function JoinTripPage({
             ))}
           </ul>
           <p className="mt-2 text-[12px] leading-snug text-[var(--color-ink-3)]">
-            {lang === "hi"
+            {prefersHindi(lang)
               ? "खर्च वज़न के हिसाब से बँटता है। किसी के लिए किया गया अतिरिक्त चक्कर उसी के खाते में जाता है।"
               : "The shared leg splits by weight. A detour made for one farmer is charged to that farmer, not to everyone."}
           </p>
@@ -276,7 +276,7 @@ export default async function JoinTripPage({
         listings={myOpenListings.map((l) => ({
           id: l.id,
           cropId: l.cropId,
-          label: `${lang === "hi" ? l.cropNameHi : l.cropName} · ${weight(l.quantityKg, lang)}`,
+          label: `${prefersHindi(lang) ? l.cropNameHi : l.cropName} · ${weight(l.quantityKg, lang)}`,
           quantityKg: l.quantityKg,
           grade: l.grade,
           pickupName: l.pickupName,
@@ -285,7 +285,7 @@ export default async function JoinTripPage({
         }))}
         crops={cropList.map((c) => ({
           id: c.id,
-          label: lang === "hi" ? c.nameHi : c.name,
+          label: prefersHindi(lang) ? c.nameHi : c.name,
         }))}
         fallbackPickup={{
           name: user.village ?? "Farm",

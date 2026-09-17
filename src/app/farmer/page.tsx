@@ -20,7 +20,7 @@ import { LIVE_SOURCE } from "@/lib/pricefeed";
 import { Page } from "@/components/Shell";
 import { Slip, SlipHeading, Line } from "@/components/Slip";
 import { Icon } from "@/components/Icon";
-import { rupees, t, weight } from "@/lib/i18n";
+import { prefersHindi, rupees, t, weight, type Lang } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -162,7 +162,7 @@ export default async function FarmerHome() {
             {t("sell", lang)}
           </span>
           <span className="block text-[13px] leading-snug opacity-85">
-            {lang === "hi"
+            {prefersHindi(lang)
               ? "सबसे ज़्यादा देने वाली मंडी खोजें"
               : "Find the mandi that pays you most"}
           </span>
@@ -182,11 +182,11 @@ export default async function FarmerHome() {
           <SlipHeading
             right={
               <Link href="/mandis" className="underline decoration-dotted underline-offset-2">
-                {lang === "hi" ? "सब" : "All"}
+                {prefersHindi(lang) ? "सब" : "All"}
               </Link>
             }
           >
-            {lang === "hi" ? "आज के भाव, आपके पास" : "Today, near you"}
+            {prefersHindi(lang) ? "आज के भाव, आपके पास" : "Today, near you"}
           </SlipHeading>
 
           <ul className="mt-1">
@@ -199,7 +199,7 @@ export default async function FarmerHome() {
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-[16px]">
-                      {lang === "hi" ? r.cropNameHi : r.cropName}
+                      {prefersHindi(lang) ? r.cropNameHi : r.cropName}
                       {r.source === LIVE_SOURCE && (
                         <span className="ml-1.5 rounded-[2px] bg-[var(--color-keep)] px-1 py-px align-[2px] text-[9.5px] font-600 uppercase tracking-wide text-[var(--color-paper-2)]">
                           {t("livePrice", lang)}
@@ -207,7 +207,7 @@ export default async function FarmerHome() {
                       )}
                     </span>
                     <span className="tnum block truncate text-[12px] text-[var(--color-ink-3)]">
-                      {lang === "hi" ? r.mandiNameHi : r.mandiName} ·{" "}
+                      {prefersHindi(lang) ? r.mandiNameHi : r.mandiName} ·{" "}
                       {r.distanceKm} km
                     </span>
                   </span>
@@ -236,7 +236,7 @@ export default async function FarmerHome() {
                 {t("groupGathering", lang)}
               </span>
               <span className="block text-[14px] leading-snug">
-                {lang === "hi"
+                {prefersHindi(lang)
                   ? `${groups[0].memberCount} किसान ${groups[0].mandiNameHi} जा रहे हैं — ${weight(groups[0].committedKg, lang)} तैयार`
                   : `${groups[0].memberCount} farmers heading to ${groups[0].mandiName} — ${weight(groups[0].committedKg, lang)} gathered`}
               </span>
@@ -284,7 +284,7 @@ export default async function FarmerHome() {
           <span className="block text-[14px] leading-snug">
             {totalDue > 0
               ? t("dueIn7Days", lang)
-              : lang === "hi"
+              : prefersHindi(lang)
                 ? "कमाई और पिछली बिक्री"
                 : "Your income and past sales"}
           </span>
@@ -314,7 +314,7 @@ export default async function FarmerHome() {
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-[16px] font-500">
-                      {lang === "hi" ? l.mandiNameHi : l.mandiName}
+                      {prefersHindi(lang) ? l.mandiNameHi : l.mandiName}
                     </span>
                     <span className="tnum block text-[12.5px] text-[var(--color-ink-3)]">
                       {weight(l.quantityKg, lang)} ·{" "}
@@ -336,7 +336,7 @@ export default async function FarmerHome() {
 
       <section>
         <SlipHeading right={`${openListings.length}`}>
-          {lang === "hi" ? "तैयार उपज" : "Harvest ready to send"}
+          {prefersHindi(lang) ? "तैयार उपज" : "Harvest ready to send"}
         </SlipHeading>
 
         {openListings.length === 0 ? (
@@ -347,7 +347,7 @@ export default async function FarmerHome() {
           */
           <div className="mt-2 rounded-[3px] border border-dashed border-[var(--color-rule-strong)] px-4 py-5 text-center">
             <p className="text-[15px] leading-relaxed">
-              {lang === "hi"
+              {prefersHindi(lang)
                 ? "जो फ़सल भेजनी है उसे यहाँ दर्ज कीजिए। ऐप हर मंडी का हिसाब लगाकर बताएगा कि कहाँ भेजने पर सबसे ज़्यादा हाथ में आएगा।"
                 : "Tell the app what you have ready and it will work out which mandi leaves you the most, after transport and spoilage."}
             </p>
@@ -381,7 +381,7 @@ export default async function FarmerHome() {
                   >
                     <div className="flex items-baseline justify-between gap-2">
                       <h3 className="text-[19px]">
-                        {lang === "hi" ? l.cropNameHi : l.cropName}
+                        {prefersHindi(lang) ? l.cropNameHi : l.cropName}
                       </h3>
                       <span className="tnum text-[16px] font-600">
                         {weight(l.quantityKg, lang)}
@@ -390,14 +390,14 @@ export default async function FarmerHome() {
 
                     <Line
                       label={t("harvestedWhen", lang)}
-                      value={`${hoursSince} h ${lang === "hi" ? "पहले" : "ago"}`}
+                      value={`${hoursSince} h ${prefersHindi(lang) ? "पहले" : "ago"}`}
                     />
                     <Line
                       label={t("dispatchBy", lang)}
                       value={
                         hoursLeft > 0
                           ? `${hoursLeft} h`
-                          : lang === "hi"
+                          : prefersHindi(lang)
                             ? "समय बीत गया"
                             : "overdue"
                       }
@@ -430,16 +430,16 @@ function StatusPill({
 }: {
   status: string;
   tripStatus: string;
-  lang: "en" | "hi";
+  lang: Lang;
 }) {
   const label =
     status === "REQUESTED"
-      ? { en: "Waiting", hi: "इंतज़ार" }
+      ? t("waiting", lang)
       : tripStatus === "IN_TRANSIT"
-        ? { en: "On the way", hi: "रास्ते में" }
+        ? t("onTheWay", lang)
         : tripStatus === "DELIVERED"
-          ? { en: "Delivered", hi: "पहुँचा" }
-          : { en: "Confirmed", hi: "पक्का" };
+          ? t("delivered", lang)
+          : t("confirmed", lang);
 
   const tone =
     status === "REQUESTED"
@@ -450,7 +450,7 @@ function StatusPill({
     <span
       className={`shrink-0 rounded-[3px] border px-2 py-1 text-[12px] font-600 ${tone}`}
     >
-      {label[lang]}
+      {label}
     </span>
   );
 }

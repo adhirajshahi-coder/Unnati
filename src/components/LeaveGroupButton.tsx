@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { t, type Lang } from "@/lib/i18n";
+import { prefersHindi, t, type Lang } from "@/lib/i18n";
 
 /**
  * Withdraw from a pooling group.
@@ -53,7 +53,7 @@ export function LeaveGroupButton({
   return (
     <div className="rounded-[3px] border border-[var(--color-lose)] bg-[var(--color-lose-soft)] p-3">
       <p className="text-[14px] leading-snug text-[var(--color-lose)]">
-        {lang === "hi"
+        {prefersHindi(lang)
           ? "समूह छोड़ने पर बाकी किसानों का खर्च बढ़ जाएगा। पक्का?"
           : "Leaving raises the cost for everyone still in the group. Sure?"}
       </p>
@@ -70,7 +70,7 @@ export function LeaveGroupButton({
           onClick={() => setConfirming(false)}
           className="flex-[2] rounded-[3px] bg-[var(--color-keep)] px-3 py-2 font-display text-[14px] font-700 uppercase tracking-[0.06em] text-[var(--color-paper-2)]"
         >
-          {lang === "hi" ? "समूह में रहें" : "Stay in"}
+          {prefersHindi(lang) ? "समूह में रहें" : "Stay in"}
         </button>
         <button
           type="button"

@@ -9,7 +9,7 @@ import { bestFillFor } from "@/lib/booking";
 import { Page } from "@/components/Shell";
 import { Slip, SlipHeading, Line } from "@/components/Slip";
 import { LoadDecision, TripControls } from "@/components/OperatorControls";
-import { rupees, t, weight } from "@/lib/i18n";
+import { prefersHindi, rupees, t, weight } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -100,7 +100,7 @@ export default async function OperatorTripPage({
               {trip.originName} →
             </div>
             <h1 className="text-[26px] leading-tight">
-              {lang === "hi" ? trip.mandiNameHi : trip.mandiName}
+              {prefersHindi(lang) ? trip.mandiNameHi : trip.mandiName}
             </h1>
             <div className="tnum text-[12.5px] text-[var(--color-ink-3)]">
               {trip.vehicleType} · {trip.regNo} · {trip.baseDistanceKm} km
@@ -129,8 +129,8 @@ export default async function OperatorTripPage({
           />
           <Line
             index={2}
-            label={lang === "hi" ? "अब तक की कमाई" : "Booked revenue"}
-            sub={`${lang === "hi" ? "यात्रा की लागत" : "Trip cost"} ${rupees(trip.totalCost)}`}
+            label={prefersHindi(lang) ? "अब तक की कमाई" : "Booked revenue"}
+            sub={`${prefersHindi(lang) ? "यात्रा की लागत" : "Trip cost"} ${rupees(trip.totalCost)}`}
             value={rupees(revenue)}
             tone={revenue >= trip.totalCost ? "keep" : "lose"}
           />
@@ -158,7 +158,7 @@ export default async function OperatorTripPage({
 
           {fill.selected.length > 0 && (
             <p className="mt-2 rounded-[3px] bg-[var(--color-keep-soft)] px-3 py-2 text-[13.5px] leading-snug text-[var(--color-keep)]">
-              {lang === "hi"
+              {prefersHindi(lang)
                 ? `इन ${fill.selected.length} लोड को लेने पर ट्रक ${fill.fillRate}% भर जाएगा और ${rupees(fill.totalValue)} की अतिरिक्त कमाई होगी। कुल ${fill.totalDetourKm} किमी अतिरिक्त चलना पड़ेगा।`
                 : `Taking these ${fill.selected.length} loads fills the truck to ${fill.fillRate}% and adds ${rupees(fill.totalValue)}, for ${fill.totalDetourKm} km of extra driving.`}
             </p>
@@ -171,19 +171,19 @@ export default async function OperatorTripPage({
                   <h3 className="text-[17px]">{l.farmerName}</h3>
                   {suggestedIds.has(l.id) ? (
                     <span className="shrink-0 rounded-[3px] bg-[var(--color-keep)] px-2 py-0.5 text-[11.5px] font-600 text-[var(--color-paper-2)]">
-                      {lang === "hi" ? "सुझाव" : "Suggested"}
+                      {prefersHindi(lang) ? "सुझाव" : "Suggested"}
                     </span>
                   ) : (
                     <span className="shrink-0 rounded-[3px] border border-[var(--color-rule-strong)] px-2 py-0.5 text-[11.5px] text-[var(--color-ink-3)]">
                       {!l.meetsDeadline
-                        ? lang === "hi"
+                        ? prefersHindi(lang)
                           ? "समय नहीं मिलेगा"
                           : "Misses departure"
                         : l.netValue <= 0
-                          ? lang === "hi"
+                          ? prefersHindi(lang)
                             ? "चक्कर महँगा"
                             : "Detour costs more than it pays"
-                          : lang === "hi"
+                          : prefersHindi(lang)
                             ? "जगह नहीं"
                             : "Does not fit"}
                     </span>
@@ -196,18 +196,18 @@ export default async function OperatorTripPage({
 
                 <div className="mt-1">
                   <Line
-                    label={lang === "hi" ? "किराया" : "Pays"}
+                    label={prefersHindi(lang) ? "किराया" : "Pays"}
                     value={rupees(l.revenue)}
                     tone="keep"
                   />
                   <Line
-                    label={lang === "hi" ? "अतिरिक्त चक्कर" : "Detour"}
+                    label={prefersHindi(lang) ? "अतिरिक्त चक्कर" : "Detour"}
                     sub={`${l.detourKm} km`}
                     value={`− ${rupees(l.detourCost)}`}
                     tone="lose"
                   />
                   <Line
-                    label={lang === "hi" ? "शुद्ध लाभ" : "Net to you"}
+                    label={prefersHindi(lang) ? "शुद्ध लाभ" : "Net to you"}
                     value={rupees(l.netValue)}
                     tone={l.netValue > 0 ? "keep" : "lose"}
                     strong
@@ -223,12 +223,12 @@ export default async function OperatorTripPage({
 
       <section className="mb-5">
         <SlipHeading right={`${confirmed.length}`}>
-          {lang === "hi" ? "पक्के लोड" : "Confirmed loads"}
+          {prefersHindi(lang) ? "पक्के लोड" : "Confirmed loads"}
         </SlipHeading>
 
         {confirmed.length === 0 ? (
           <p className="py-6 text-center text-[15px] text-[var(--color-ink-3)]">
-            {lang === "hi"
+            {prefersHindi(lang)
               ? "अभी कोई लोड पक्का नहीं हुआ।"
               : "Nothing confirmed yet."}
           </p>
@@ -250,7 +250,7 @@ export default async function OperatorTripPage({
                     </a>
                   </span>
                   <span className="tnum block text-[12px] text-[var(--color-ink-3)]">
-                    {lang === "hi" ? c.cropNameHi : c.cropName} ·{" "}
+                    {prefersHindi(lang) ? c.cropNameHi : c.cropName} ·{" "}
                     {weight(c.quantityKg, lang)} · {c.pickupName}
                     {c.detourKm > 0 ? ` · +${c.detourKm} km` : ""}
                   </span>

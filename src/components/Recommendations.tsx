@@ -1,6 +1,47 @@
 import { Slip, Line, SlipHeading, Stamp } from "@/components/Slip";
 import { TransportChoice } from "@/components/TransportChoice";
-import { rupees, t, weight, type Lang } from "@/lib/i18n";
+import { SpeakButton } from "@/components/SpeakButton";
+import { prefersHindi, pick, rupees, t, weight, type Lang } from "@/lib/i18n";
+
+/**
+ * The slip, said out loud.
+ *
+ * Assembled from the same dictionary keys the slip is printed from, in the same order,
+ * with the same figures — so a farmer who listens and a field agent who reads over their
+ * shoulder are working from one document. If this sentence were written separately it
+ * would drift from the slip within two changes, and a spoken price that disagrees with
+ * the printed one is the single worst thing this app could do.
+ *
+ * It reads telegraphically rather than as flowing prose, which is deliberate: this is a
+ * receipt being read out, and each deduction wants its own beat.
+ */
+function spokenSlip(
+  best: RankedView,
+  cropName: string,
+  quantityKg: number,
+  lang: Lang,
+): string {
+  const mandi = prefersHindi(lang) ? best.mandiNameHi : best.mandiName;
+
+  const lines = [
+    `${t("bestChoice", lang)}: ${mandi}, ${best.distanceKm} km.`,
+    `${cropName}, ${weight(quantityKg, lang)}.`,
+    `${t("mandiPrice", lang)} ${rupees(best.modalPrice)} ${t("perQuintal", lang)}.`,
+    `${t("commission", lang)} ${rupees(best.commission)}.`,
+    `${t("marketFee", lang)} ${rupees(best.marketFee)}.`,
+    `${t("transport", lang)}, ${best.pooled ? t("sharedTruck", lang) : t("ownTruck", lang)}, ${rupees(best.transportCost)}.`,
+    `${t("spoilage", lang)} ${rupees(best.spoilageLoss)}.`,
+    `${t("youTakeHome", lang)} ${rupees(best.netValue)}.`,
+  ];
+
+  if (best.advantageOverNearest > 0) {
+    lines.push(
+      `${rupees(best.advantageOverNearest)} ${t("moreThanNearest", lang)}.`,
+    );
+  }
+
+  return lines.join(" ");
+}
 
 /** The shared-truck offer for a mandi: a live group, or a projection of starting one. */
 export interface SharedOffer {
@@ -87,7 +128,7 @@ export function Recommendations({
   }
 
   const [best, ...rest] = ranked;
-  const cropName = lang === "hi" ? crop.nameHi : crop.name;
+  const cropName = prefersHindi(lang) ? crop.nameHi : crop.name;
 
   return (
     <section className="space-y-5">
@@ -96,7 +137,7 @@ export function Recommendations({
       <TransportChoice
         lang={lang}
         mandiId={best.mandiId}
-        mandiName={lang === "hi" ? best.mandiNameHi : best.mandiName}
+        mandiName={prefersHindi(lang) ? best.mandiNameHi : best.mandiName}
         distanceKm={best.distanceKm}
         quantityKg={quantityKg}
         cropId={cropId}
@@ -112,7 +153,7 @@ export function Recommendations({
       {rest.length > 0 && (
         <div>
           <SlipHeading right={`${rest.length}`}>
-            {lang === "hi" ? "बाकी मंडियाँ" : "Other mandis"}
+            {prefersHindi(lang) ? "बाकी मंडियाँ" : "Other mandis"}
           </SlipHeading>
           <ol className="mt-1">
             {rest.map((r, i) => (
@@ -123,7 +164,7 @@ export function Recommendations({
               >
                 <span className="min-w-0">
                   <span className="block truncate text-[15px]">
-                    {lang === "hi" ? r.mandiNameHi : r.mandiName}
+                    {prefersHindi(lang) ? r.mandiNameHi : r.mandiName}
                   </span>
                   <span className="tnum block text-[12px] text-[var(--color-ink-3)]">
                     {r.distanceKm} km · {t("mandiPrice", lang)}{" "}
@@ -143,7 +184,7 @@ export function Recommendations({
             ))}
           </ol>
           <p className="mt-2 text-[12px] leading-snug text-[var(--color-ink-3)]">
-            {lang === "hi"
+            {prefersHindi(lang)
               ? "लाल आँकड़ा = सबसे अच्छे विकल्प के मुकाबले कितना कम मिलेगा।"
               : "The red figure is how much less you would take home than the best option."}
           </p>
@@ -178,7 +219,7 @@ function BestSlip({
             {t("bestChoice", lang)}
           </div>
           <h2 className="text-[26px] leading-tight">
-            {lang === "hi" ? best.mandiNameHi : best.mandiName}
+            {prefersHindi(lang) ? best.mandiNameHi : best.mandiName}
           </h2>
           <div className="tnum text-[12.5px] text-[var(--color-ink-3)]">
             {best.district} · {best.distanceKm} km · {best.transitHours} h
@@ -246,6 +287,19 @@ function BestSlip({
         </div>
       </div>
 
+      {/*
+        Beside the total, because this is the number the whole screen exists to deliver
+        and the farmer who cannot read it is standing right here.
+      */}
+      <div className="mt-3 border-t border-dotted border-[var(--color-rule)] pt-3">
+        <SpeakButton
+          lang={lang}
+          text={spokenSlip(best, cropName, quantityKg, lang)}
+          label={t("readAloud", lang)}
+          className="w-full justify-center"
+        />
+      </div>
+
       {best.advantageOverNearest > 0 && (
         <p className="mt-3 rounded-[3px] bg-[var(--color-keep-soft)] px-3 py-2 text-[14px] leading-snug text-[var(--color-keep)]">
           <span className="tnum font-600">
@@ -257,19 +311,19 @@ function BestSlip({
 
       {best.exceedsShelfLife && (
         <p className="mt-2 rounded-[3px] border border-[var(--color-lose)] bg-[var(--color-lose-soft)] px-3 py-2 text-[13.5px] leading-snug text-[var(--color-lose)]">
-          {lang === "hi"
+          {prefersHindi(lang)
             ? "चेतावनी: इतनी दूर भेजने पर यह फ़सल अपनी टिकाऊ अवधि पार कर जाएगी। नज़दीकी मंडी पर विचार करें।"
             : "Warning: sent this far, this crop passes its safe window before it arrives. Consider a closer mandi."}
         </p>
       )}
 
       <p className="tnum mt-3 text-[11.5px] leading-snug text-[var(--color-ink-3)]">
-        {lang === "hi" ? "स्रोत" : "Source"}: {best.source} ·{" "}
+        {prefersHindi(lang) ? "स्रोत" : "Source"}: {best.source} ·{" "}
         {best.priceAgeHours < 1
-          ? lang === "hi"
+          ? prefersHindi(lang)
             ? "अभी अपडेट हुआ"
             : "updated just now"
-          : `${Math.round(best.priceAgeHours)} h ${lang === "hi" ? "पहले" : "ago"}`}
+          : `${Math.round(best.priceAgeHours)} h ${prefersHindi(lang) ? "पहले" : "ago"}`}
       </p>
     </Slip>
   );
@@ -292,9 +346,22 @@ function Confidence({
   age: number;
 }) {
   const copy = {
-    HIGH: { en: "Reliable", hi: "भरोसेमंद" },
-    MEDIUM: { en: "Fair", hi: "ठीक-ठाक" },
-    LOW: { en: "Check locally", hi: "पता करें" },
+    HIGH: {
+      en: "Reliable", hi: "भरोसेमंद", mr: "विश्वासार्ह", bn: "নির্ভরযোগ্য",
+      te: "నమ్మదగినది", ta: "நம்பகமானது", gu: "ભરોસાપાત્ર", kn: "ವಿಶ್ವಾಸಾರ್ಹ",
+      ml: "വിശ്വസനീയം", pa: "ਭਰੋਸੇਯੋਗ", or: "ବିଶ୍ୱସନୀୟ", as: "নিৰ্ভৰযোগ্য", ur: "قابلِ اعتماد",
+    },
+    MEDIUM: {
+      en: "Fair", hi: "ठीक-ठाक", mr: "ठीक", bn: "মোটামুটি", te: "ఫర్వాలేదు",
+      ta: "பரவாயில்லை", gu: "ઠીક", kn: "ಪರವಾಗಿಲ್ಲ", ml: "കുഴപ്പമില്ല", pa: "ਠੀਕ-ਠਾਕ",
+      or: "ମୋଟାମୋଟି", as: "মোটামুটি", ur: "ٹھیک ٹھاک",
+    },
+    LOW: {
+      en: "Check locally", hi: "पता करें", mr: "स्थानिक चौकशी करा", bn: "স্থানীয়ভাবে দেখুন",
+      te: "స్థానికంగా కనుక్కోండి", ta: "உள்ளூரில் விசாரி", gu: "સ્થાનિક તપાસો",
+      kn: "ಸ್ಥಳೀಯವಾಗಿ ಪರಿಶೀಲಿಸಿ", ml: "നാട്ടിൽ അന്വേഷിക്കുക", pa: "ਸਥਾਨਕ ਪਤਾ ਕਰੋ",
+      or: "ସ୍ଥାନୀୟ ଭାବେ ଜାଣନ୍ତୁ", as: "স্থানীয়ভাৱে বিচাৰক", ur: "مقامی طور پر معلوم کریں",
+    },
   }[level];
 
   const tone =
@@ -308,7 +375,9 @@ function Confidence({
     <div
       className={`shrink-0 rounded-[3px] border px-2 py-1 text-center ${tone}`}
     >
-      <div className="text-[12px] font-600 leading-tight">{copy[lang]}</div>
+      <div className="text-[12px] font-600 leading-tight">
+        {pick(lang, copy)}
+      </div>
       <div className="tnum text-[10.5px] leading-tight opacity-80">
         {Math.round(age)}h
       </div>
@@ -334,15 +403,15 @@ function HandlingAdvice({
   return (
     <Slip>
       <SlipHeading
-        right={`${crop.shelfLifeHours} h ${lang === "hi" ? "टिकाऊ" : "shelf life"}`}
+        right={`${crop.shelfLifeHours} h ${prefersHindi(lang) ? "टिकाऊ" : "shelf life"}`}
       >
         {t("handlingTip", lang)}
       </SlipHeading>
       <p className="pt-2 text-[15px] leading-relaxed">
-        {lang === "hi" ? crop.handlingTipHi : crop.handlingTip}
+        {prefersHindi(lang) ? crop.handlingTipHi : crop.handlingTip}
       </p>
       <p className="mt-2 text-[13px] text-[var(--color-ink-2)]">
-        {lang === "hi"
+        {prefersHindi(lang)
           ? `${best.mandiNameHi} तक ${best.transitHours} घंटे लगेंगे। इस दौरान लगभग ${best.spoilagePercent}% नुकसान का अनुमान है।`
           : `The run to ${best.mandiName} takes about ${best.transitHours} hours, over which roughly ${best.spoilagePercent}% of the value is expected to be lost.`}
       </p>

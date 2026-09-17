@@ -5,6 +5,7 @@ import { llmConfigured } from "@/lib/assistant";
 import { Page } from "@/components/Shell";
 import { SlipHeading } from "@/components/Slip";
 import { Assistant } from "@/components/Assistant";
+import { prefersHindi } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export default async function HelpPage() {
   // Openers differ by role: an operator has no crop to sell and no mandi to choose.
   const starters =
     user.role === "OPERATOR"
-      ? lang === "hi"
+      ? prefersHindi(lang)
         ? [
             "आस-पास कौन से किसान हैं?",
             "ट्रक का इंतज़ार करते समूह",
@@ -29,7 +30,7 @@ export default async function HelpPage() {
             "Groups waiting for a truck",
             "How does this app work?",
           ]
-      : lang === "hi"
+      : prefersHindi(lang)
         ? [
             "प्याज़ कहाँ बेचूँ?",
             "टमाटर का आज का भाव",
@@ -49,13 +50,13 @@ export default async function HelpPage() {
         <SlipHeading
           right={
             llmConfigured()
-              ? lang === "hi"
+              ? prefersHindi(lang)
                 ? "एआई सहायक"
                 : "AI assistant"
               : undefined
           }
         >
-          {lang === "hi" ? "तुरंत मदद" : "Instant help"}
+          {prefersHindi(lang) ? "तुरंत मदद" : "Instant help"}
         </SlipHeading>
 
         <div className="mt-3 flex min-h-0 flex-1 flex-col">

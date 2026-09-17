@@ -9,7 +9,7 @@ import { findJoinableTrips } from "@/lib/booking";
 import { findJoinablePools } from "@/lib/pools";
 import { Page } from "@/components/Shell";
 import { Slip, SlipHeading } from "@/components/Slip";
-import { rupees, t, weight } from "@/lib/i18n";
+import { prefersHindi, rupees, t, weight } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -88,7 +88,7 @@ export default async function FarmerTrips() {
                     >
                       <div className="flex items-baseline justify-between gap-2">
                         <h3 className="text-[18px]">
-                          {lang === "hi" ? g.mandiNameHi : g.mandiName}
+                          {prefersHindi(lang) ? g.mandiNameHi : g.mandiName}
                         </h3>
                         <span
                           className={`shrink-0 text-[12px] font-600 ${
@@ -98,7 +98,7 @@ export default async function FarmerTrips() {
                           }`}
                         >
                           {inIt
-                            ? lang === "hi"
+                            ? prefersHindi(lang)
                               ? "आप इसमें हैं"
                               : "You are in"
                             : ready
@@ -108,7 +108,7 @@ export default async function FarmerTrips() {
                       </div>
 
                       <p className="tnum mt-0.5 text-[12.5px] text-[var(--color-ink-3)]">
-                        {g.memberCount} {lang === "hi" ? "किसान" : "farmers"} ·{" "}
+                        {g.memberCount} {prefersHindi(lang) ? "किसान" : "farmers"} ·{" "}
                         {weight(g.committedKg, lang)} ·{" "}
                         {new Date(g.targetDepartAt).toLocaleString("en-IN", {
                           day: "numeric",
@@ -168,11 +168,11 @@ export default async function FarmerTrips() {
                     </p>
                     <p className="mt-2 text-[13.5px] text-[var(--color-ink-2)]">
                       {j.farmerCount}{" "}
-                      {lang === "hi"
+                      {prefersHindi(lang)
                         ? "किसान पहले से साझा कर रहे हैं"
                         : "farmers already sharing"}
                       {j.detourKm === 0
-                        ? lang === "hi"
+                        ? prefersHindi(lang)
                           ? " · आप रास्ते में ही हैं"
                           : " · you are on the route"
                         : ` · ${j.detourKm} km detour`}
@@ -202,10 +202,10 @@ export default async function FarmerTrips() {
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-[16px] font-500">
-                      {lang === "hi" ? m.mandiNameHi : m.mandiName}
+                      {prefersHindi(lang) ? m.mandiNameHi : m.mandiName}
                     </span>
                     <span className="tnum block text-[12.5px] text-[var(--color-ink-3)]">
-                      {lang === "hi" ? m.cropNameHi : m.cropName} ·{" "}
+                      {prefersHindi(lang) ? m.cropNameHi : m.cropName} ·{" "}
                       {weight(m.quantityKg, lang)} ·{" "}
                       {new Date(m.departAt).toLocaleDateString("en-IN", {
                         day: "numeric",
@@ -215,7 +215,7 @@ export default async function FarmerTrips() {
                   </span>
                   <span className="tnum shrink-0 text-right text-[15px]">
                     {m.status === "REQUESTED"
-                      ? lang === "hi"
+                      ? prefersHindi(lang)
                         ? "इंतज़ार"
                         : "pending"
                       : rupees(m.costShare)}

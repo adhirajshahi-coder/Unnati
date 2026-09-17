@@ -7,7 +7,7 @@ import { projectPool, pickVehicle } from "@/lib/engine/grouping";
 import { Page } from "@/components/Shell";
 import { Slip, SlipHeading, Stamp } from "@/components/Slip";
 import { LeaveGroupButton } from "@/components/LeaveGroupButton";
-import { rupees, t, weight } from "@/lib/i18n";
+import { prefersHindi, rupees, t, weight } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +64,7 @@ export default async function PoolPage({
     redirect(`/farmer/trip/${pool.tripId}`);
   }
 
-  const mandiName = lang === "hi" ? pool.mandiNameHi : pool.mandiName;
+  const mandiName = prefersHindi(lang) ? pool.mandiNameHi : pool.mandiName;
   const ready = pool.status === "READY";
 
   return (
@@ -102,7 +102,7 @@ export default async function PoolPage({
           <div className="mb-1 flex items-baseline justify-between text-[13px]">
             <span className="text-[var(--color-ink-2)]">
               {t("inTheGroup", lang)} · {members.length}{" "}
-              {lang === "hi" ? "किसान" : "farmers"}
+              {prefersHindi(lang) ? "किसान" : "farmers"}
             </span>
             <span className="tnum font-600">
               {weight(committedKg, lang)} / {weight(vehicle.capacityKg, lang)}
@@ -121,7 +121,7 @@ export default async function PoolPage({
 
           {!ready && (
             <p className="mt-2 text-[14px] leading-snug text-[var(--color-ink-2)]">
-              {lang === "hi"
+              {prefersHindi(lang)
                 ? `ट्रक मँगाने लायक होने के लिए लगभग ${weight(Math.max(0, Math.round(vehicle.capacityKg * 0.6 - committedKg)), lang)} और चाहिए।`
                 : `About ${weight(Math.max(0, Math.round(vehicle.capacityKg * 0.6 - committedKg)), lang)} more and a truck owner will take this group.`}
             </p>
@@ -147,7 +147,7 @@ export default async function PoolPage({
               </div>
               {detourCharge > 0 && (
                 <div className="tnum mt-1 text-[11.5px] leading-tight text-[var(--color-ink-3)]">
-                  {lang === "hi"
+                  {prefersHindi(lang)
                     ? `इसमें आपके लिए ${mine?.detourKm} किमी चक्कर का ${rupees(detourCharge)} शामिल`
                     : `includes ${rupees(detourCharge)} for the ${mine?.detourKm} km detour to reach you`}
                 </div>
@@ -161,7 +161,7 @@ export default async function PoolPage({
             <span className="tnum font-600">
               {rupees(projection.savedNow)}
             </span>{" "}
-            {lang === "hi"
+            {prefersHindi(lang)
               ? `बच रहे हैं — अकेले ट्रक लेने के मुकाबले ${projection.savedPercentNow}% कम।`
               : `saved so far — ${projection.savedPercentNow}% less than hiring a truck alone.`}
           </p>
@@ -171,7 +171,7 @@ export default async function PoolPage({
             // so outright is the point: a farmer who joins expecting a saving and is
             // billed more than they would have paid alone will not use this again.
             <p className="mt-3 rounded-[3px] border border-[var(--color-pool)] bg-[var(--color-pool-soft)] px-3 py-2 text-[14px] leading-snug text-[var(--color-pool)]">
-              {lang === "hi"
+              {prefersHindi(lang)
                 ? `अभी समूह छोटा है, इसलिए आपका हिस्सा अकेले ट्रक लेने से ज़्यादा है। और किसान जुड़ने पर यह घटकर ${rupees(projection.shareIfFull)} तक आ जाएगा। ट्रक मिलने तक कोई पैसा नहीं लगता।`
                 : `The group is still small, so your share is more than hiring alone right now. As more farmers join it falls toward ${rupees(projection.shareIfFull)}. Nothing is charged until a truck takes the group.`}
             </p>
@@ -196,12 +196,12 @@ export default async function PoolPage({
                   {m.farmerName}
                   {m.farmerId === user.id && (
                     <span className="ml-1 text-[12px] text-[var(--color-keep)]">
-                      ({lang === "hi" ? "आप" : "you"})
+                      ({prefersHindi(lang) ? "आप" : "you"})
                     </span>
                   )}
                 </span>
                 <span className="tnum block text-[12px] text-[var(--color-ink-3)]">
-                  {lang === "hi" ? m.cropNameHi : m.cropName} ·{" "}
+                  {prefersHindi(lang) ? m.cropNameHi : m.cropName} ·{" "}
                   {m.pickupName}
                   {m.detourKm > 0 ? ` · +${m.detourKm} km` : ""}
                 </span>
@@ -214,7 +214,7 @@ export default async function PoolPage({
         </ul>
 
         <p className="mt-2 text-[12px] leading-snug text-[var(--color-ink-3)]">
-          {lang === "hi"
+          {prefersHindi(lang)
             ? "खर्च वज़न के हिसाब से बँटेगा। ट्रक मिलने के बाद ही पक्का हिसाब बनेगा।"
             : "The cost will split by weight. Nothing is charged until a truck actually takes the group."}
         </p>
@@ -222,10 +222,10 @@ export default async function PoolPage({
 
       <Slip className="mb-5">
         <SlipHeading>
-          {lang === "hi" ? "पड़ोसियों को बताएँ" : "Tell your neighbours"}
+          {prefersHindi(lang) ? "पड़ोसियों को बताएँ" : "Tell your neighbours"}
         </SlipHeading>
         <p className="pt-2 text-[14px] leading-relaxed">
-          {lang === "hi"
+          {prefersHindi(lang)
             ? `${Math.round(pool.distanceKm)} किमी दूर ${mandiName} जाने वाले किसी भी किसान को इस समूह में जोड़ें। हर नए किसान के साथ सबका खर्च घटता है।`
             : `Anyone sending produce to ${mandiName} can join. Every farmer who does lowers the cost for everyone already in.`}
         </p>

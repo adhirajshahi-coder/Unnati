@@ -96,7 +96,7 @@ pulses and oilseeds, and a farmer can add one the list is missing.
 | `npm run dev` | Development server on port 3100 |
 | `npm run build` | Production build |
 | `npm start` | Serve the production build (reads `PORT`) |
-| `npm test` | Unit tests (134, Node's built-in runner) |
+| `npm test` | Unit tests (178, Node's built-in runner) |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint |
 | `npm run db:generate` | Regenerate SQL migrations after editing `src/db/schema.ts` |
@@ -123,7 +123,9 @@ Next.js 15 — one service, one port
    │   ├── booking.ts  orchestration: the only place routes and engine meet
    │   ├── notifications.ts
    │   ├── auth.ts     phone + PIN, scrypt, signed cookie sessions
-   │   └── i18n.ts     Hindi and English
+   │   ├── languages.ts  the thirteen languages, and the fallback chain
+   │   ├── i18n.ts       the dictionary and the lookup rules
+   │   └── speech.ts     preparing text for the read-aloud engine
    └── db/             Drizzle schema + driver switch
    │
    ▼
@@ -178,7 +180,7 @@ candidates it falls back to a greedy pass by value density.
 | FR-7 | Real-time tracking for everyone on a booking | `/api/trips/[id]/ping`, `/farmer/trip/[id]` |
 | FR-8 | Price and pooling notifications | `notifications.ts`; opening a trip alerts farmers within 35 km, and WhatsApp carries them to anyone opted in |
 | FR-9 | Billing notice **7 days** before the due date | `chargeWithReminder` — a payable cannot be created without one |
-| FR-10 | Regional language support | Hindi and English throughout, stored per user |
+| FR-10 | Regional language support | Thirteen languages, stored per user; read-aloud on every figure that matters |
 | FR-11 | Transaction log for income tracking | `/farmer/earnings` |
 | — | Instant help, grounded in the app’s own data | `/help`, `lib/assistant/` |
 | — | Finding nearby farmers and operators to collaborate with | `/connect` |
@@ -407,6 +409,71 @@ week-old government price is worse than today's estimate.
 
 ---
 
+## Thirteen languages, and reading them aloud
+
+`lib/languages.ts` lists the languages: Hindi, English, Marathi, Bengali, Telugu,
+Tamil, Gujarati, Kannada, Malayalam, Punjabi, Odia, Assamese and Urdu. They are ordered
+by how many farming households speak each, not alphabetically, because the picker is
+read by someone looking for their own language and the common ones should be reachable
+without scrolling. Each carries its name in its own script — a picker that lists
+"Marathi" in Latin is no use to someone who cannot read Latin — plus the speech tag its
+voice engine wants, and, for Urdu, the flag that turns the page around.
+
+**Missing translations fall back to Hindi, then English.** That order is the whole
+design. A Marathi or Punjabi speaker meeting an untranslated string is far more likely
+to read Hindi than English, and this app is for people who read slowly in any script.
+Two functions carry the rule: `pick()` for strings a call site supplies, and
+`prefersHindi()` for the English/Hindi ternaries written back when there were only two
+languages. A test walks `src/` and fails on any new `lang === "hi"`, because each one
+of those quietly sends everyone except Hindi readers to the English branch.
+
+**What is actually translated.** Every string needed to *operate* the app: navigation,
+every button, every line on the mandi slip, the money and weight words, the quality
+grades, the pooling vocabulary and the trip statuses. A test enumerates those keys and
+fails if any is missing in any language. The longer explanatory prose — handling advice,
+the paragraphs explaining how a cost split works — is still Hindi and English only and
+falls back to Hindi. So is the `name`/`nameHi` pair on crops and mandis, which needs
+per-language columns rather than a dictionary entry. A Tamil farmer today gets a Tamil
+interface with Hindi prose in it; that is worth saying plainly rather than claiming
+thirteen complete languages.
+
+**Fonts.** Latin and Devanagari ship from IBM Plex. The other ten scripts come from the
+handset. Webfonts for Bengali, Telugu, Tamil, Gujarati, Kannada, Malayalam, Gurmukhi,
+Odia and Nastaliq would add well over a megabyte to a first load that happens over 2G in
+a field, and every Android sold in India already carries Noto for all of them.
+
+**WhatsApp templates are the exception.** A template is a contract with Meta and each
+language is a separate submission it has to approve; an unapproved locale is not a worse
+message, it is a message that does not send. So `TemplateBody` requires English and
+Hindi and accepts the rest optionally, and `templateLanguage()` routes a farmer to the
+nearest language whose body has actually been registered.
+
+### Read aloud
+
+Every recommendation slip, assistant answer and alert carries a **Listen** button. It
+uses the browser's own `speechSynthesis`, so nothing is uploaded to be spoken and it
+works with no signal at all.
+
+The work is in `lib/speech.ts`, and it is about figures. Left alone, a speech engine
+reads "₹12,340" as *"twelve, three hundred and forty"* — the comma becomes a list
+separator and the farmer hears two numbers. It skips or mispronounces the rupee sign,
+and says "210 km" as *"two hundred ten kay em"*. So before anything is spoken, digit
+grouping is stripped, the currency becomes the word for rupees in that language and
+placed after the number where speech puts it, and units are spelled out. Long passages
+are split at sentence ends, because Chrome silently stops partway through anything much
+over two hundred characters — and a total that cuts off halfway is worse than one never
+read.
+
+The spoken slip is assembled from the same dictionary keys and the same engine figures
+as the printed one, in the same order. A spoken price that disagreed with the printed
+one would be the worst thing this app could do.
+
+If the handset has no voice at all the button does not render. A control that does
+nothing when pressed teaches the user the app is broken — and that user is, by
+definition, the one who cannot read the screen to find out otherwise.
+
+---
+
 ## Deploying to Render
 
 The repository carries a blueprint, so the whole stack comes up in one step.
@@ -452,7 +519,7 @@ network drops is worse than a diagram that always renders.
 ## Testing
 
 ```bash
-npm test        # 114 unit tests
+npm test        # 178 unit tests
 npm run typecheck
 npm run lint
 ```
@@ -464,6 +531,12 @@ exact solver genuinely beats a greedy largest-first choice, a stale price is mar
 low-confidence, the feed's own outliers are rejected before a farmer ever sees them,
 a Hinglish question is understood whatever order the words arrive in, and a language
 model cannot alter a figure on its way to the screen.
+
+The language tests defend the properties a test can actually check: that no key renders
+blank in any of the thirteen, that the words needed to operate the app are genuinely
+translated rather than quietly falling back, that a gap degrades to Hindi and not
+English, that numbers stay in Latin digits with Indian grouping in every language, and
+that a rupee amount survives the trip into the speech engine intact.
 
 ---
 
