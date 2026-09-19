@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getDb } from "@/db";
 import { users } from "@/db/schema";
 import { requireUser, AuthError } from "@/lib/auth";
-import { normaliseDob } from "@/lib/pinreset";
+import { normaliseDob, validEmail } from "@/lib/pinreset";
 
 export const dynamic = "force-dynamic";
 
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
 
     let email: string | null = null;
     if (rawEmail) {
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawEmail)) {
+      if (!validEmail(rawEmail)) {
         return NextResponse.json(
           {
             error: "That does not look like an email address.",

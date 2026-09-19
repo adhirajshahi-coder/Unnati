@@ -19,6 +19,8 @@ export function LoginForm() {
   const [name, setName] = useState("");
   const [village, setVillage] = useState("");
   const [role, setRole] = useState<"FARMER" | "OPERATOR">("FARMER");
+  const [dob, setDob] = useState("");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -32,7 +34,7 @@ export function LoginForm() {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, pin, name, village, role }),
+        body: JSON.stringify({ phone, pin, name, village, role, dateOfBirth: dob, email }),
       },
     );
 
@@ -96,6 +98,42 @@ export function LoginForm() {
                 onChange={setVillage}
                 placeholder="Niphad"
               />
+
+              {/*
+                Asked at sign-up, not left to settings.
+
+                This is the only moment a new farmer is reliably sitting with someone
+                helping them — an agent, a son, a neighbour with the handset. Ask later
+                and the people who never go looking in settings are exactly the people
+                who are locked out in six months with nothing to match against.
+              */}
+              <div className="rounded-[3px] border border-dashed border-[var(--color-rule-strong)] bg-[var(--color-paper-2)] px-3 py-3">
+                <p className="mb-2 text-[13px] leading-snug text-[var(--color-ink-2)]">
+                  <span className="font-600">पिन भूल जाएँ तो काम आएगा</span> — दोनों
+                  वैकल्पिक हैं, पर भरे होंगे तो आप ख़ुद नया पिन बना सकेंगे।
+                  <span className="mt-1 block text-[12px] text-[var(--color-ink-3)]">
+                    Both optional. With either one you can reset your own PIN later.
+                  </span>
+                </p>
+
+                <div className="space-y-2.5">
+                  <OptionalField
+                    label="जन्मतिथि · Date of birth"
+                    value={dob}
+                    onChange={setDob}
+                    inputMode="numeric"
+                    placeholder="05/08/1974"
+                  />
+                  <OptionalField
+                    label="ईमेल — अगर हो · Email, if you have one"
+                    value={email}
+                    onChange={setEmail}
+                    type="email"
+                    autoComplete="email"
+                    placeholder="naam@example.com"
+                  />
+                </div>
+              </div>
               <div>
                 <span className="mb-1 block text-[13px] font-500 text-[var(--color-ink-2)]">
                   I am a · मैं हूँ
@@ -461,6 +499,39 @@ function AskTeam({ phone }: { phone: string }) {
       </div>
       {msg && <Result text={msg} tone="keep" />}
     </div>
+  );
+}
+
+/**
+ * Like `Field`, but genuinely optional.
+ *
+ * `Field` marks its input `required`, which is right for a name and a village and
+ * wrong here: leaving the date of birth blank has to submit the form, not silently
+ * refuse to. Kept as its own component rather than a `required` prop on `Field` so
+ * nobody has to remember to pass it.
+ */
+function OptionalField({
+  label,
+  value,
+  onChange,
+  ...rest
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange" | "value">) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-[12.5px] font-500 text-[var(--color-ink-2)]">
+        {label}
+      </span>
+      <input
+        {...rest}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-[3px] border border-[var(--color-rule-strong)] bg-[var(--color-paper)] px-3 py-2 text-[16px] outline-none focus:border-[var(--color-keep)]"
+      />
+    </label>
   );
 }
 

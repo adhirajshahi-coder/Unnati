@@ -1,6 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { normaliseDob, validPin, MAX_ATTEMPTS, LOCKOUT_MS, TOKEN_TTL_MS } from "../src/lib/pinreset";
+import {
+  normaliseDob,
+  validPin,
+  validEmail,
+  MAX_ATTEMPTS,
+  LOCKOUT_MS,
+  TOKEN_TTL_MS,
+} from "../src/lib/pinreset";
 
 /**
  * The date-of-birth reset is the weakest door in this app, so the parts of it that can
@@ -73,4 +80,19 @@ test("guessing 1 January is not cheap", () => {
   const lockouts = Math.floor(yearsToTry / MAX_ATTEMPTS);
   const hours = (lockouts * LOCKOUT_MS) / 3_600_000;
   assert.ok(hours >= 5, `only ${hours.toFixed(1)}h to walk 60 years of 1 January`);
+});
+
+test("an email check that rejects any address containing an s is broken", () => {
+  // Exactly the bug shell-escaping introduced once: `[^\s@]` became `[^s@]`, which
+  // silently refuses ramesh@, suresh@, kisan@ — a large share of the names this app
+  // is for. Worth a permanent test because the failure looks like a typo by the user.
+  assert.ok(validEmail("ramesh@example.com"));
+  assert.ok(validEmail("suresh.patil@kisan.in"));
+  assert.ok(validEmail("s@s.in"));
+});
+
+test("an email check still catches a real typo", () => {
+  for (const bad of ["", "naam", "naam@", "@example.com", "naam@example", "a b@c.in"]) {
+    assert.ok(!validEmail(bad), bad);
+  }
 });

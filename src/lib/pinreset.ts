@@ -70,6 +70,18 @@ export function validPin(pin: string): boolean {
   return /^\d{4}$/.test(pin);
 }
 
+/**
+ * Good enough to catch a typo, deliberately not more.
+ *
+ * Defined once and imported by both the places that accept an address, because a
+ * regex copied into two routes is a regex that ends up meaning two different things —
+ * and the failure mode is a farmer whose address is accepted at sign-up and rejected
+ * when they try to change it, or the reverse.
+ */
+export function validEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
 function sameString(a: string, b: string): boolean {
   const x = Buffer.from(a);
   const y = Buffer.from(b);
