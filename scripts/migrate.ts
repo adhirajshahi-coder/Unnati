@@ -11,6 +11,13 @@
  * state between them, which is the wrong ground for DDL inside a transaction.
  * Migrations run once and can afford a real connection; serving requests cannot.
  */
+import { config } from "dotenv";
+
+// As in the seed script: a plain script does not read .env.local the way Next does, and
+// putting the URL in that file beats pasting a password onto a command line.
+config({ path: ".env.local" });
+config({ path: ".env" });
+
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";

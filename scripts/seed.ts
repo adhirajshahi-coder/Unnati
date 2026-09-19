@@ -14,6 +14,16 @@
  * This script is idempotent: it clears the demo rows and rewrites them, so running it
  * twice leaves the same database. Safe to re-run on every deploy.
  */
+import { config } from "dotenv";
+
+// Next.js loads .env.local automatically; a plain script does not. Loading it here is
+// what lets someone point this at a hosted database by putting DATABASE_URL in that
+// file — which is gitignored — rather than pasting a URL containing a password onto a
+// command line, where the shell will fight the punctuation in it and the terminal
+// history will keep it.
+config({ path: ".env.local" });
+config({ path: ".env" });
+
 import { sql } from "drizzle-orm";
 import { getDb } from "../src/db";
 import {
