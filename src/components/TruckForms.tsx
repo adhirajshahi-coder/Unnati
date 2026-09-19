@@ -63,12 +63,15 @@ export function TruckForm({ lang }: { lang: Lang }) {
             type="number"
             inputMode="numeric"
           />
+          {/* A rate is quoted in paise as often as in whole rupees — ₹22.50 a km is
+              an ordinary number, and the default step of 1 would refuse it. */}
           <Field
             label={`${t("ratePerKm", lang)} (₹)`}
             value={ratePerKm}
             onChange={setRatePerKm}
             type="number"
-            inputMode="numeric"
+            inputMode="decimal"
+            step="any"
           />
         </div>
 

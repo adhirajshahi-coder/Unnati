@@ -106,11 +106,22 @@ export function SellForm({
             <Label>
               {t("quantity", lang)} ({t("quintal", lang)})
             </Label>
+            {/*
+              step="any", not a half-quintal step.
+
+              `min="0.1"` with `step="0.5"` made the valid values 0.1, 0.6, 1.1 … 24.6,
+              25.1 — which excludes every whole number. Typing 25, the most ordinary
+              answer there is, produced "the two nearest valid values are 24.6 and
+              25.1" and the form refused to submit.
+
+              A weighbridge slip does not round to half a quintal anyway. Whatever it
+              says is what should go in the box.
+            */}
             <input
               type="number"
               inputMode="decimal"
               min="0.1"
-              step="0.5"
+              step="any"
               value={quintals}
               onChange={(e) => setQuintals(e.target.value)}
               className="tnum w-full rounded-[3px] border border-[var(--color-rule-strong)] bg-[var(--color-paper)] px-3 text-[20px] font-600 outline-none focus:border-[var(--color-keep)]"

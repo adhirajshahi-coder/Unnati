@@ -168,7 +168,9 @@ export function JoinButton({
                 inputMode="decimal"
                 min="0.5"
                 max={maxKg / 100}
-                step="0.5"
+                // Whole numbers happened to be valid here, but a half-quintal step
+                // still refused 2.3 — and a weighbridge does not round.
+                step="any"
                 value={quintals}
                 onChange={(e) => setQuintals(e.target.value)}
                 className="tnum w-full rounded-[3px] border border-[var(--color-rule-strong)] bg-[var(--color-paper)] px-2 text-[17px] font-600"
