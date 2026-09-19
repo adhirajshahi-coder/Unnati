@@ -91,6 +91,31 @@ async function main() {
   const db = await getDb();
   const now = Date.now();
 
+  /*
+   * Refuse to run over a database that already has people in it.
+   *
+   * This script's first act is to delete every row, which is right for setting up a
+   * demo and catastrophic anywhere else. It became reachable from a much more dangerous
+   * place when the free Render tier turned out not to support a pre-deploy hook: the
+   * seed moved into the start command, where it runs on every cold start, and a free
+   * service cold-starts whenever it has been idle a quarter of an hour.
+   *
+   * So the guard is the thing that makes that arrangement safe. First boot finds an
+   * empty database and seeds it; every boot after that finds the accounts and stops.
+   * SEED_FORCE=true is the deliberate way back in, for resetting a pilot on purpose.
+   */
+  const [existing] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(users);
+
+  if (existing && existing.n > 0 && process.env.SEED_FORCE !== "true") {
+    console.log(
+      `Database already has ${existing.n} users — leaving it alone.\n` +
+        "Set SEED_FORCE=true to wipe it and re-seed from scratch.",
+    );
+    return;
+  }
+
   console.log("Clearing existing rows…");
   // Order matters: children before parents.
   for (const table of [

@@ -32,12 +32,20 @@ services:
     # found", and neither message points at the cause.
     buildCommand: npm ci --include=dev && npm run build
 
-    # Runs after the build, before the new version takes traffic. Migrations are
-    # idempotent; so is the seed, which rewrites the demo rows rather than appending
-    # to them. Drop the seed once this carries real data.
-    preDeployCommand: npm run db:migrate && npm run db:seed
-
-    startCommand: npm start
+    # Migrations and seed run here, not in a preDeployCommand, because Render rejects
+    # a pre-deploy command on the free plan outright — the blueprint will not apply.
+    #
+    # Both steps are cheap on every boot after the first. Migrations are applied on the
+    # app's first database connection and are a no-op once there is nothing pending; the
+    # seed checks for existing accounts and stops without touching anything. That guard
+    # matters more than it looks: a free service cold-starts after fifteen minutes idle,
+    # so this command runs often, and the seed's first act is to delete every row.
+    #
+    # On a paid plan, move both back to:
+    #   preDeployCommand: npm run db:migrate && npm run db:seed
+    # and set DB_AUTO_MIGRATE=false, which is the right shape once more than one
+    # instance is running and they must not migrate concurrently.
+    startCommand: npm run db:seed && npm start
 
     healthCheckPath: /api/health
 
@@ -90,24 +98,34 @@ services:
   # Pulls current mandi prices four times a day. Agmarknet markets report through the
   # morning and into the afternoon, so a single overnight run would miss most of them.
   # Times are UTC; 02:30 UTC is 08:00 IST.
-  - type: cron
-    name: unnati-price-ingest
-    runtime: node
-    plan: free
-    region: singapore
-    branch: main
-    schedule: "30 2,6,10,14 * * *"
-    # Same reason as the web service: the ingest script is TypeScript and runs on tsx.
-    buildCommand: npm ci --include=dev
-    startCommand: npm run db:ingest
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: unnati-db
-          property: connectionString
-      - key: DATABASE_SSL
-        value: require
-      - key: DATA_GOV_API_KEY
-        sync: false
-      - key: NODE_VERSION
-        value: "22"
+  #
+  # COMMENTED OUT because Render has no free plan for cron jobs — they are billed from
+  # the Starter tier up, and a blueprint asking for `plan: free` here will not apply.
+  #
+  # Until this is enabled, prices refresh by hand: an admin opens /admin and presses
+  # "Refresh live prices", which runs the same ingest against the same feed. Fine for a
+  # pilot someone is watching, not fine once farmers are relying on the figures being
+  # current — a price nobody refreshed is the one failure this product cannot afford.
+  # Uncomment the whole block when the service moves to a paid plan.
+  #
+  # - type: cron
+  #   name: unnati-price-ingest
+  #   runtime: node
+  #   plan: starter
+  #   region: singapore
+  #   branch: main
+  #   schedule: "30 2,6,10,14 * * *"
+  #   # Same reason as the web service: the ingest script is TypeScript, run by tsx.
+  #   buildCommand: npm ci --include=dev
+  #   startCommand: npm run db:ingest
+  #   envVars:
+  #     - key: DATABASE_URL
+  #       fromDatabase:
+  #         name: unnati-db
+  #         property: connectionString
+  #     - key: DATABASE_SSL
+  #       value: require
+  #     - key: DATA_GOV_API_KEY
+  #       sync: false
+  #     - key: NODE_VERSION
+  #       value: "22"

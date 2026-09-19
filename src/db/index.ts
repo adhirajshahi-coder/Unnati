@@ -57,7 +57,30 @@ async function connect(): Promise<Db> {
           : { rejectUnauthorized: false },
       max: Number(process.env.DATABASE_POOL_MAX ?? 5),
     });
-    return drizzle(pool, { schema }) as unknown as Db;
+    const db = drizzle(pool, { schema }) as unknown as Db;
+
+    /*
+     * Bring the schema up to date here, the same way the PGlite path does.
+     *
+     * Render's free tier does not support a pre-deploy command, which is where
+     * migrations belong and where this blueprint used to run them. The remaining honest
+     * options were to migrate during the build — which happens in a different network
+     * context that cannot always reach the database — or to migrate on first connect.
+     * This is the second.
+     *
+     * It is safe here because a free service runs exactly one instance, so there is no
+     * second process racing to apply the same file, and drizzle records what it has
+     * applied either way. On a paid plan with more than one instance, move this back to
+     * a pre-deploy command rather than letting several instances migrate at once.
+     *
+     * Set DB_AUTO_MIGRATE=false to opt out where a deploy step handles it instead.
+     */
+    if (process.env.DB_AUTO_MIGRATE !== "false") {
+      const { migrate } = await import("drizzle-orm/node-postgres/migrator");
+      await migrate(db as never, { migrationsFolder: migrationsFolder() });
+    }
+
+    return db;
   }
 
   const { PGlite } = await import("@electric-sql/pglite");
