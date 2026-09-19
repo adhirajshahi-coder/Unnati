@@ -75,6 +75,16 @@ function explainConnectionFailure(err: unknown): unknown {
   );
 }
 
+/**
+ * Is this a serverless runtime — many short-lived instances rather than one server?
+ *
+ * Two defaults below depend on the answer, and both are the difference between working
+ * and failing rather than a tuning preference. Vercel sets VERCEL on every deployment.
+ */
+function isServerless() {
+  return Boolean(process.env.VERCEL);
+}
+
 async function connect(): Promise<Db> {
   const url = process.env.DATABASE_URL;
 
@@ -83,14 +93,27 @@ async function connect(): Promise<Db> {
     const { Pool } = await import("pg");
     const pool = new Pool({
       connectionString: url,
-      // Render's managed Postgres presents a certificate signed by its own CA. Internal
-      // connections inside a Render private network do not need verification; external
-      // ones do. Opt in with DATABASE_SSL=require.
+      // Render's managed Postgres presents a certificate signed by its own CA, and
+      // Supabase requires TLS outright. Neither needs us to verify the chain from
+      // inside a trusted network. DATABASE_SSL=disable turns it off for local Postgres.
       ssl:
         process.env.DATABASE_SSL === "disable"
           ? false
           : { rejectUnauthorized: false },
-      max: Number(process.env.DATABASE_POOL_MAX ?? 5),
+
+      /*
+       * One connection per instance on serverless, five on a long-lived server.
+       *
+       * A pool is an optimisation when one process handles every request and a liability
+       * when fifty frozen lambdas are each holding five sockets open. Postgres counts
+       * connections, not callers: Supabase's free tier allows sixty direct ones, and a
+       * modest traffic spike would exhaust them and start refusing everyone — including
+       * the instance trying to serve a farmer a price.
+       *
+       * Pair this with Supabase's transaction pooler (port 6543) rather than the direct
+       * connection (5432), which is what makes many short-lived clients affordable.
+       */
+      max: Number(process.env.DATABASE_POOL_MAX ?? (isServerless() ? 1 : 5)),
     });
     const db = drizzle(pool, { schema }) as unknown as Db;
 
@@ -103,14 +126,23 @@ async function connect(): Promise<Db> {
      * context that cannot always reach the database — or to migrate on first connect.
      * This is the second.
      *
-     * It is safe here because a free service runs exactly one instance, so there is no
+     * It is safe there because a free service runs exactly one instance, so there is no
      * second process racing to apply the same file, and drizzle records what it has
-     * applied either way. On a paid plan with more than one instance, move this back to
-     * a pre-deploy command rather than letting several instances migrate at once.
+     * applied either way.
      *
-     * Set DB_AUTO_MIGRATE=false to opt out where a deploy step handles it instead.
+     * It is NOT safe on serverless, which is why this defaults off when VERCEL is set.
+     * A cold burst starts many instances at once, each one would find the same migration
+     * pending and run it, and they would collide inside a DDL statement — the kind of
+     * failure that leaves a half-applied schema at the exact moment traffic arrives.
+     * There, migrations belong in the build, which happens once: see the `vercel-build`
+     * script in package.json.
+     *
+     * DB_AUTO_MIGRATE forces it either way if a deployment needs the opposite.
      */
-    if (process.env.DB_AUTO_MIGRATE !== "false") {
+    const autoMigrate =
+      process.env.DB_AUTO_MIGRATE ?? (isServerless() ? "false" : "true");
+
+    if (autoMigrate !== "false") {
       const { migrate } = await import("drizzle-orm/node-postgres/migrator");
       try {
         await migrate(db as never, { migrationsFolder: migrationsFolder() });
