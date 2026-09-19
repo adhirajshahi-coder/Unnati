@@ -154,6 +154,27 @@ async function connect(): Promise<Db> {
     return db;
   }
 
+  /*
+   * PGlite is a development convenience, and on serverless it is always a mistake.
+   *
+   * It writes a real directory to disk, which a serverless filesystem will not allow,
+   * and even where it did the data would vanish with the instance. Falling through to
+   * it in production means the deploy fails at
+   *   ENOENT: no such file or directory, mkdir '.data/pglite'
+   * which describes a filesystem problem and hides the actual one: no database was
+   * configured. Say that instead.
+   */
+  if (isServerless()) {
+    throw new Error(
+      "No database URL is configured for this deployment.\n\n" +
+        "Set DATABASE_URL (or connect Supabase, which supplies POSTGRES_URL) in the " +
+        "project's environment variables, then redeploy — environment variables added " +
+        "after a deployment do not apply to it retroactively.\n\n" +
+        "The local PGlite fallback is not usable here: it needs a writable disk, and " +
+        "anything written to one would be discarded when the instance ends.",
+    );
+  }
+
   const { PGlite } = await import("@electric-sql/pglite");
   const { drizzle } = await import("drizzle-orm/pglite");
 
