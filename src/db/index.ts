@@ -129,8 +129,13 @@ async function connect(): Promise<Db> {
      * A cold burst starts many instances at once, each one would find the same migration
      * pending and run it, and they would collide inside a DDL statement — the kind of
      * failure that leaves a half-applied schema at the exact moment traffic arrives.
-     * There, migrations belong in the build, which happens once: see the `vercel-build`
-     * script in package.json.
+     *
+     * Nor do migrations belong in the Vercel build, which was tried and is worse than it
+     * sounds: it makes every deployment depend on the database being reachable from a
+     * build container, so an unrelated network problem blocks a front-end change, and
+     * Supabase's direct connection is IPv6-only while Vercel's builders are not. They
+     * are run deliberately instead — `npm run db:migrate` against the deployment's URL,
+     * which is the same command that precedes seeding a new database.
      *
      * DB_AUTO_MIGRATE forces it either way if a deployment needs the opposite.
      */
