@@ -25,7 +25,12 @@ services:
     region: singapore # nearest region to the pilot districts
     branch: main
 
-    buildCommand: npm ci && npm run build
+    # `--include=dev` is load-bearing, not belt-and-braces. NODE_ENV is set to
+    # production below, and npm reads that during the build and omits devDependencies —
+    # which is where next's compiler, typescript, tailwind and tsx all live. Without the
+    # flag the build fails at "next: not found" or the pre-deploy fails at "tsx: not
+    # found", and neither message points at the cause.
+    buildCommand: npm ci --include=dev && npm run build
 
     # Runs after the build, before the new version takes traffic. Migrations are
     # idempotent; so is the seed, which rewrites the demo rows rather than appending
@@ -92,7 +97,8 @@ services:
     region: singapore
     branch: main
     schedule: "30 2,6,10,14 * * *"
-    buildCommand: npm ci
+    # Same reason as the web service: the ingest script is TypeScript and runs on tsx.
+    buildCommand: npm ci --include=dev
     startCommand: npm run db:ingest
     envVars:
       - key: DATABASE_URL

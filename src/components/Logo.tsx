@@ -79,7 +79,7 @@ function Paint({ prefix }: { prefix: string }) {
 export function Logo({ className = "" }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 660 252"
+      viewBox="0 0 660 282"
       className={className}
       role="img"
       aria-label="UNNATI — Unified Network for New-age Agriculture, Technology and Innovation"
@@ -137,29 +137,44 @@ export function Logo({ className = "" }: { className?: string }) {
       />
       <path d="M630 6 L644 52 L598 40 Z" fill="url(#ul-gold)" />
 
-      <rect
-        x="8"
-        y="180"
-        width="644"
-        height="46"
-        rx="23"
-        fill={GREEN_DEEP}
-      />
+      {/*
+        The banner carries its line over two rows, not one.
+
+        The source artwork sets all sixty-three characters on a single line, which works
+        on a wide desktop header and nowhere else. Squeezed into the 335px this logo gets
+        on a phone, that line renders at under five pixels per character — present, but
+        not readable, which is the worst of both. Two rows roughly double the width each
+        character gets and lift the type to something a person can actually read.
+      */}
+      <rect x="8" y="178" width="644" height="76" rx="20" fill={GREEN_DEEP} />
       <text
         x="330"
-        y="211"
-        textLength="600"
+        y="208"
+        textLength="430"
         lengthAdjust="spacingAndGlyphs"
         textAnchor="middle"
         style={{ fontFamily: "var(--font-display)" }}
-        fontSize="22"
+        fontSize="30"
         fontWeight="600"
         fill="#f5f3ec"
       >
-        Unified Network for New-age Agriculture, Technology &amp; Innovation
+        Unified Network for New-age
+      </text>
+      <text
+        x="330"
+        y="241"
+        textLength="560"
+        lengthAdjust="spacingAndGlyphs"
+        textAnchor="middle"
+        style={{ fontFamily: "var(--font-display)" }}
+        fontSize="30"
+        fontWeight="600"
+        fill="#f5f3ec"
+      >
+        Agriculture, Technology &amp; Innovation
       </text>
 
-      <path d="M96 242 L564 242" stroke="url(#ul-rule)" strokeWidth="5" />
+      <path d="M96 272 L564 272" stroke="url(#ul-rule)" strokeWidth="5" />
     </svg>
   );
 }
