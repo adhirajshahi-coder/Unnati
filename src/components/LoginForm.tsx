@@ -159,6 +159,8 @@ export function LoginForm() {
               : "Already registered? Sign in"}
           </button>
         </form>
+
+        {mode === "signin" && <PinHelp phone={phone} />}
       </Slip>
 
       <div className="mt-4 border-t border-dotted border-[var(--color-rule)] pt-3">
@@ -184,6 +186,280 @@ export function LoginForm() {
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+/**
+ * "I have forgotten my PIN."
+ *
+ * A farmer who cannot sign in is looking at a screen that, without this, tells them
+ * nothing at all — and they are the user least likely to work out on their own that
+ * somebody has to be telephoned.
+ *
+ * Three ways back in, offered in the order most farmers can actually use them:
+ *
+ *   1. **Date of birth.** Needs nothing but the handset. It is also the weakest of the
+ *      three — a birth date is not a secret from a neighbour — so the server locks
+ *      recovery after five wrong answers and alerts the account whenever it succeeds.
+ *   2. **A link by email**, for the minority who have one.
+ *   3. **Ask the team**, which raises a request for the ops desk to call back. This is
+ *      the one that always works, and it is why the panel never dead-ends.
+ *
+ * Collapsed behind `details`, so the ordinary sign-in is untouched by it.
+ */
+function PinHelp({ phone }: { phone: string }) {
+  const [tab, setTab] = useState<"dob" | "email" | "ask">("dob");
+
+  return (
+    <details className="mt-3 border-t border-dotted border-[var(--color-rule)] pt-3">
+      <summary className="cursor-pointer list-none text-[14px] underline decoration-dotted underline-offset-2 text-[var(--color-ink-2)] [&::-webkit-details-marker]:hidden">
+        पिन भूल गए? · Forgot your PIN?
+      </summary>
+
+      <div
+        role="tablist"
+        aria-label="PIN recovery method"
+        className="mt-3 flex flex-wrap gap-1.5"
+      >
+        {(
+          [
+            ["dob", "जन्मतिथि से", "Date of birth"],
+            ["email", "ईमेल से", "Email"],
+            ["ask", "टीम से मदद", "Ask the team"],
+          ] as const
+        ).map(([key, hi, en]) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => setTab(key)}
+            className={`rounded-[3px] border px-2.5 py-1.5 text-[13px] ${
+              tab === key
+                ? "border-[var(--color-keep)] bg-[var(--color-keep)] text-[var(--color-paper-2)]"
+                : "border-[var(--color-rule-strong)] bg-[var(--color-paper)] text-[var(--color-ink-2)]"
+            }`}
+          >
+            {hi}
+            <span className="ml-1 opacity-70">· {en}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-3">
+        {tab === "dob" && <DobReset phone={phone} />}
+        {tab === "email" && <EmailReset phone={phone} />}
+        {tab === "ask" && <AskTeam phone={phone} />}
+      </div>
+    </details>
+  );
+}
+
+/** Shared success/error line, so all three paths report the same way. */
+function Result({ text, tone }: { text: string; tone: "keep" | "lose" }) {
+  return (
+    <p
+      role={tone === "lose" ? "alert" : "status"}
+      className={`mt-2 rounded-[3px] border px-3 py-2 text-[13.5px] leading-snug ${
+        tone === "keep"
+          ? "border-[var(--color-keep)] bg-[var(--color-keep-soft)] text-[var(--color-keep)]"
+          : "border-[var(--color-lose)] bg-[var(--color-lose-soft)] text-[var(--color-lose)]"
+      }`}
+    >
+      {text}
+    </p>
+  );
+}
+
+const helpInput =
+  "tnum w-full min-w-0 rounded-[3px] border border-[var(--color-rule-strong)] bg-[var(--color-paper)] px-3 py-2 text-[16px] outline-none focus:border-[var(--color-keep)]";
+const helpButton =
+  "shrink-0 rounded-[3px] border-2 border-[var(--color-keep)] px-4 py-2 text-[14px] font-600 text-[var(--color-keep)] disabled:opacity-50";
+
+function DobReset({ phone }: { phone: string }) {
+  const [num, setNum] = useState("");
+  const [dob, setDob] = useState("");
+  const [pin, setPin] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ text: string; tone: "keep" | "lose" } | null>(
+    null,
+  );
+
+  const number = num || phone;
+  const ready = number.trim().length === 10 && dob.trim() && /^\d{4}$/.test(pin);
+
+  async function submit() {
+    if (!ready || busy) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/auth/pin-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          method: "dob",
+          phone: number.trim(),
+          dob: dob.trim(),
+          newPin: pin,
+        }),
+      });
+      const data = await res.json();
+      setMsg(
+        res.ok
+          ? { text: data.messageHi ?? data.message, tone: "keep" }
+          : { text: data.errorHi ?? data.error, tone: "lose" },
+      );
+      if (res.ok) setPin("");
+    } catch {
+      setMsg({ text: "नेटवर्क नहीं मिला। दोबारा कोशिश कीजिए।", tone: "lose" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-[13px] leading-snug text-[var(--color-ink-3)]">
+        वही जन्मतिथि डालिए जो खाते में दर्ज है। पाँच बार ग़लत होने पर कुछ देर के
+        लिए बंद हो जाएगा।
+      </p>
+      <input
+        id="dob-reset-phone"
+        value={number}
+        onChange={(e) => setNum(e.target.value)}
+        inputMode="numeric"
+        maxLength={10}
+        placeholder="मोबाइल नंबर"
+        aria-label="Mobile number"
+        className={helpInput}
+      />
+      <input
+        id="dob-reset-dob"
+        value={dob}
+        onChange={(e) => setDob(e.target.value)}
+        inputMode="numeric"
+        placeholder="जन्मतिथि — 05/08/1974"
+        aria-label="Date of birth"
+        className={helpInput}
+      />
+      <div className="flex flex-wrap gap-2">
+        <input
+          id="dob-reset-pin"
+          value={pin}
+          onChange={(e) => setPin(e.target.value)}
+          inputMode="numeric"
+          maxLength={4}
+          type="password"
+          placeholder="नया 4 अंकों का पिन"
+          aria-label="New 4-digit PIN"
+          className={helpInput + " flex-1"}
+        />
+        <button type="button" onClick={submit} disabled={!ready || busy} className={helpButton}>
+          {busy ? "…" : "पिन बदलें"}
+        </button>
+      </div>
+      {msg && <Result text={msg.text} tone={msg.tone} />}
+    </div>
+  );
+}
+
+function EmailReset({ phone }: { phone: string }) {
+  const [id, setId] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const value = id || phone;
+
+  async function submit() {
+    if (busy || value.trim().length < 3) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/auth/pin-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ method: "email", identifier: value.trim() }),
+      });
+      const data = await res.json();
+      setMsg(data.messageHi ?? data.message ?? "");
+    } catch {
+      setMsg("नेटवर्क नहीं मिला। दोबारा कोशिश कीजिए।");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-[13px] leading-snug text-[var(--color-ink-3)]">
+        यह तभी चलेगा जब आपने खाते में ईमेल जोड़ा हो। ईमेल या मोबाइल नंबर, कोई भी
+        डाल सकते हैं।
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <input
+          id="email-reset-id"
+          value={value}
+          onChange={(e) => setId(e.target.value)}
+          placeholder="ईमेल या मोबाइल नंबर"
+          aria-label="Email or mobile number"
+          className={helpInput + " flex-1"}
+        />
+        <button type="button" onClick={submit} disabled={busy} className={helpButton}>
+          {busy ? "…" : "लिंक भेजें"}
+        </button>
+      </div>
+      {msg && <Result text={msg} tone="keep" />}
+    </div>
+  );
+}
+
+function AskTeam({ phone }: { phone: string }) {
+  const [num, setNum] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const number = num || phone;
+
+  async function submit() {
+    if (busy || number.trim().length !== 10) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/auth/pin-help", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: number.trim() }),
+      });
+      const data = await res.json();
+      setMsg(data.messageHi ?? data.message ?? "");
+    } catch {
+      setMsg("नेटवर्क नहीं मिला। दोबारा कोशिश कीजिए।");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-[13px] leading-snug text-[var(--color-ink-3)]">
+        अपना नंबर डालिए। उन्नति टीम इसी नंबर पर कॉल करके नया पिन देगी।
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <input
+          id="ask-team-phone"
+          value={number}
+          onChange={(e) => setNum(e.target.value)}
+          inputMode="numeric"
+          maxLength={10}
+          placeholder="मोबाइल नंबर"
+          aria-label="Mobile number"
+          className={helpInput + " flex-1"}
+        />
+        <button type="button" onClick={submit} disabled={busy} className={helpButton}>
+          {busy ? "…" : "मदद माँगें"}
+        </button>
+      </div>
+      {msg && <Result text={msg} tone="keep" />}
     </div>
   );
 }

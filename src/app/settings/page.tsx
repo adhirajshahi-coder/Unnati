@@ -10,6 +10,7 @@ import { Page } from "@/components/Shell";
 import { SlipHeading } from "@/components/Slip";
 import { WhatsappOptIn } from "@/components/WhatsappOptIn";
 import { LocationPicker } from "@/components/LocationPicker";
+import { RecoveryDetails } from "@/components/RecoveryDetails";
 import { DEFAULT_LOCATIONS } from "@/data/mandis";
 import { LanguageList } from "@/components/LanguagePicker";
 import { prefersHindi, pick, t, type Lang } from "@/lib/i18n";
@@ -107,6 +108,12 @@ export default async function SettingsPage() {
           <LanguageList lang={lang} />
         </div>
       </section>
+
+      <RecoveryDetails
+        lang={lang}
+        dateOfBirth={user.dateOfBirth}
+        email={user.email}
+      />
 
       <LocationPicker
         lang={lang}

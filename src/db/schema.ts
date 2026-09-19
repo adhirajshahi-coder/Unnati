@@ -120,6 +120,34 @@ export const users = pgTable(
     state: text("state"),
     lat: doublePrecision("lat"),
     lng: doublePrecision("lng"),
+
+    /**
+     * Recovery details. Both optional, and both only ever used to let someone back
+     * into their own account.
+     *
+     * Date of birth is stored as text in ISO form rather than a date column because it
+     * is never compared, sorted or arithmetic'd — it is matched exactly once, against
+     * what someone typed, and a date column would invite a timezone to shift it a day
+     * either side of midnight and silently lock a farmer out of their own account.
+     *
+     * Email is here because most farmers will not have one and a required field would
+     * have to be filled with something false. Whoever does have one gets a stronger
+     * way back in than the date-of-birth check.
+     */
+    dateOfBirth: text("date_of_birth"),
+    email: text("email"),
+
+    /**
+     * Failed recovery attempts, and the lockout they earn.
+     *
+     * The date-of-birth check needs this to be worth anything. Birth dates are not
+     * secret — a neighbour knows one, and rural records carry so many 1 January
+     * entries that an unlimited guesser would be through in a couple of dozen tries.
+     * A short lockout after a handful of misses is what turns a guessable fact into
+     * something that has to be actually known.
+     */
+    pinAttempts: integer("pin_attempts").notNull().default(0),
+    pinLockedUntil: timestamp("pin_locked_until", { withTimezone: true }),
     /**
      * WhatsApp delivery. Opt-in is stored with the moment it was given because Meta
      * requires a business to be able to show when and how a user consented, and
@@ -526,6 +554,31 @@ export const feedHealth = pgTable("feed_health", {
   ok: boolean("ok").notNull().default(true),
   message: text("message"),
 });
+
+/**
+ * One-time links for resetting a PIN by email.
+ *
+ * Only the token's hash is stored. A reset table is a list of keys to every account
+ * that has recently asked for help, and anyone who reads the database should not come
+ * away able to use them — the same reason the PIN itself is never stored in the clear.
+ *
+ * Rows are kept after use rather than deleted, so a link cannot be replayed and so a
+ * reset nobody asked for leaves a trace.
+ */
+export const pinResetTokens = pgTable(
+  "pin_reset_tokens",
+  {
+    id: id(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull().unique(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("pin_reset_user_idx").on(t.userId, t.expiresAt)],
+);
 
 export type User = typeof users.$inferSelect;
 export type Crop = typeof crops.$inferSelect;

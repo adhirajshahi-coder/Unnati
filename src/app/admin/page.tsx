@@ -17,6 +17,7 @@ import { unreadCount } from "@/lib/notifications";
 import { Page } from "@/components/Shell";
 import { Slip, SlipHeading, Line } from "@/components/Slip";
 import { IngestButton } from "@/components/IngestButton";
+import { ResetPinForm } from "@/components/ResetPinForm";
 import { hasApiKey } from "@/lib/pricefeed";
 import {
   recentMessages,
@@ -212,6 +213,8 @@ export default async function AdminPage() {
           />
         </div>
       </Slip>
+
+      <ResetPinForm />
 
       <Slip className="mb-5">
         <SlipHeading
