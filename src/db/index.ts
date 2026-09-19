@@ -3,8 +3,8 @@
  *
  * One Postgres schema, two drivers:
  *
- *   - `DATABASE_URL` set   → node-postgres against a real server (Render Managed Postgres).
- *   - `DATABASE_URL` unset → PGlite, real Postgres compiled to WASM, stored under `.data/pglite`.
+ *   - a Postgres URL set   → node-postgres against a real server (Render, Supabase).
+ *   - none set            → PGlite, real Postgres compiled to WASM, under `.data/pglite`.
  *
  * The second path is what makes this app testable on a machine with no Postgres and no
  * Docker. It is the same SQL dialect, so nothing about the queries changes between them.
@@ -15,6 +15,7 @@
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import type { ExtractTablesWithRelations } from "drizzle-orm";
 import * as schema from "./schema";
+import { databaseSsl, runtimeDatabaseUrl } from "./url";
 
 /**
  * One type covering both drivers. The query-result and relations parameters are the
@@ -86,20 +87,14 @@ function isServerless() {
 }
 
 async function connect(): Promise<Db> {
-  const url = process.env.DATABASE_URL;
+  const url = runtimeDatabaseUrl();
 
   if (url) {
     const { drizzle } = await import("drizzle-orm/node-postgres");
     const { Pool } = await import("pg");
     const pool = new Pool({
       connectionString: url,
-      // Render's managed Postgres presents a certificate signed by its own CA, and
-      // Supabase requires TLS outright. Neither needs us to verify the chain from
-      // inside a trusted network. DATABASE_SSL=disable turns it off for local Postgres.
-      ssl:
-        process.env.DATABASE_SSL === "disable"
-          ? false
-          : { rejectUnauthorized: false },
+      ssl: databaseSsl(),
 
       /*
        * One connection per instance on serverless, five on a long-lived server.

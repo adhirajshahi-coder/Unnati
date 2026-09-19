@@ -1,29 +1,31 @@
 /**
  * Apply pending migrations to a real Postgres server.
  *
- * Render runs this as the pre-deploy command. Locally it is unnecessary — the PGlite
- * path in `src/db/index.ts` migrates itself on first connect — so this script refuses
- * to run without DATABASE_URL rather than silently doing nothing.
+ * Run from the Vercel build (`vercel-build`), where it happens exactly once, and by
+ * hand against a new database. Locally it is unnecessary — the PGlite path in
+ * `src/db/index.ts` migrates itself on first connect — so this refuses to run with no
+ * URL configured rather than silently doing nothing.
+ *
+ * Deliberately asks for the *direct* connection rather than the pooled one. A
+ * transaction pooler hands out a different backend per statement and keeps no session
+ * state between them, which is the wrong ground for DDL inside a transaction.
+ * Migrations run once and can afford a real connection; serving requests cannot.
  */
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
+import { databaseSsl, migrationDatabaseUrl } from "../src/db/url";
 
-const url = process.env.DATABASE_URL;
+const url = migrationDatabaseUrl();
 if (!url) {
   console.error(
-    "DATABASE_URL is not set. Local development uses PGlite, which migrates itself.",
+    "No database URL is set (DATABASE_URL, DIRECT_DATABASE_URL or POSTGRES_URL*).\n" +
+      "Local development uses PGlite, which migrates itself on first connect.",
   );
   process.exit(1);
 }
 
-const pool = new Pool({
-  connectionString: url,
-  ssl:
-    process.env.DATABASE_SSL === "disable"
-      ? false
-      : { rejectUnauthorized: false },
-});
+const pool = new Pool({ connectionString: url, ssl: databaseSsl() });
 
 const db = drizzle(pool);
 
