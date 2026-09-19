@@ -15,6 +15,15 @@ databases:
     databaseName: unnati
     user: unnati
     plan: free
+    # Must match the web service's region below, and it is not optional.
+    #
+    # `fromDatabase` hands the service the database's *internal* hostname, and Render
+    # only resolves that from inside the same region. Leave this out and Render puts the
+    # database in its own default region while the service sits in Singapore, the
+    # hostname resolves nowhere, and the deploy dies at
+    #   getaddrinfo ENOTFOUND dpg-xxxxxxxxxxxx-a
+    # which names the symptom and gives no hint that a region is behind it.
+    region: singapore
     postgresMajorVersion: "16"
 
 services:

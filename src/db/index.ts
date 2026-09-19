@@ -40,6 +40,41 @@ function migrationsFolder() {
   return `${process.cwd()}/drizzle`;
 }
 
+/**
+ * Turn a DNS failure against a Render database into the sentence that fixes it.
+ *
+ * `fromDatabase` in the blueprint supplies the database's internal hostname, and Render
+ * resolves those only from inside the same region. Get the regions out of step and the
+ * deploy dies with `getaddrinfo ENOTFOUND dpg-xxxxxxxxxxxx-a` — accurate, and no help
+ * at all: nothing in it suggests looking at a region, so the natural reading is that
+ * the database was never created.
+ *
+ * Anything that is not that failure is rethrown untouched.
+ */
+function explainConnectionFailure(err: unknown): unknown {
+  const cause = (err as { cause?: { code?: string; hostname?: string } })?.cause;
+  const code = cause?.code ?? (err as { code?: string })?.code;
+  const host = cause?.hostname ?? (err as { hostname?: string })?.hostname;
+
+  // Render's internal hostnames look like `dpg-<id>-a`, with no dots in them.
+  const internalRenderHost =
+    typeof host === "string" && host.startsWith("dpg-") && !host.includes(".");
+
+  if (code !== "ENOTFOUND" || !internalRenderHost) return err;
+
+  return new Error(
+    `Cannot resolve the database host "${host}".\n\n` +
+      "That is a Render internal hostname, which only resolves from a service in the " +
+      "same region as the database. The usual cause is a render.yaml that sets a " +
+      "region on the web service but not on the database, so Render puts them in " +
+      "different regions.\n\n" +
+      "Fix: give the `databases:` entry the same `region:` as the service, then delete " +
+      "the database Render already created in the wrong region and re-apply the " +
+      "blueprint — changing the region of an existing database is not possible.",
+    { cause: err },
+  );
+}
+
 async function connect(): Promise<Db> {
   const url = process.env.DATABASE_URL;
 
@@ -77,7 +112,11 @@ async function connect(): Promise<Db> {
      */
     if (process.env.DB_AUTO_MIGRATE !== "false") {
       const { migrate } = await import("drizzle-orm/node-postgres/migrator");
-      await migrate(db as never, { migrationsFolder: migrationsFolder() });
+      try {
+        await migrate(db as never, { migrationsFolder: migrationsFolder() });
+      } catch (err) {
+        throw explainConnectionFailure(err);
+      }
     }
 
     return db;
